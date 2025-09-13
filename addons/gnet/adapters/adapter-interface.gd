@@ -1,30 +1,34 @@
 extends RefCounted
-class_name DualNetAdapter
+class_name GNetAdapter
 """
-Abstract transport adapter.
+Abstract transport adapter for gNet.
 
-All concrete adapters (Steam, ENet) should implement this interface to
-normalize hosting, connecting, closing, and per-frame polling.
+Concrete adapters (Steam, ENet) must implement host/connect/close/poll and
+emit `error(code, details)` when failures occur.
 """
 
-var name := "base"
+signal error(code, details)
 
-func init(config := {}):
+var name : String
+
+func configure(config := {}) -> void:
 	"""Optional adapter initialization hook (SDK checks, config)."""
 	pass
 
 func host(opts := {}):
-	"""Create and return a MultiplayerPeer configured for hosting."""
+	"""Create and return a MultiplayerPeer configured for hosting, or null on failure."""
 	return null
 
-func connect(target):
+func connect_to(target):
 	"""
-	Create and return a MultiplayerPeer configured for connecting.
-	'target' is adapter-specific (e.g., SteamID or 'address:port').
+	Create and return a MultiplayerPeer configured for connecting, or null on failure.
+
+	`target` is adapter-specific (e.g., SteamID or 'address:port' for ENet).
+	Can be used to connect to peers or dedicated servers.
 	"""
 	return null
 
-func close():
+func close() -> void:
 	"""Close and clean up any active peer/resources for this adapter."""
 	pass
 

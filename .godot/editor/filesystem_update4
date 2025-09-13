@@ -1,0 +1,5 @@
+res://addons/gnet/examples/EnetP2P/LobbyMain.tscn
+res://addons/gnet/autoload/SteamMatchmaking.gd
+res://addons/gnet/plugin.gd
+res://addons/gnet/autoload/Matchmaking.gd
+res://addons/gnet/examples/EnetP2P/LobbyMain.gd

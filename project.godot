@@ -1,0 +1,27 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="gnet"
+config/features=PackedStringArray("4.4", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+NetCore="*res://addons/gnet/autoload/NetCore.gd"
+Lobby="*res://addons/gnet/autoload/Matchmaking.gd"
+ServerRuntime="*res://addons/gnet/autoload/ServerRuntime.gd"
+ClientRuntime="*res://addons/gnet/autoload/ClientRuntime.gd"
+MessageBus="*res://addons/gnet/autoload/MessageBus.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gnet/plugin.cfg")

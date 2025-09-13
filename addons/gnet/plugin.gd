@@ -1,24 +1,24 @@
+@tool
 extends EditorPlugin
 """
-Editor plugin entrypoint.
+Editor plugin entrypoint for gNet.
 
-When the addon is enabled, this registers the autoload singletons
-(NetCore, Lobby, ServerRuntime, ClientRuntime, MessageBus) so they
-are globally available in any project using the addon.
+When the addon is enabled, this registers autoload singletons so they are
+globally available in any project that includes gNet.
 """
 
-func _enter_tree():
+func _enter_tree() -> void:
 	"""Register autoload singletons when the plugin is enabled."""
-	add_autoload_singleton("NetCore", "res://addons/dualnet/autoload/NetCore.gd")
-	add_autoload_singleton("Lobby", "res://addons/dualnet/autoload/Lobby.gd")
-	add_autoload_singleton("ServerRuntime", "res://addons/dualnet/autoload/ServerRuntime.gd")
-	add_autoload_singleton("ClientRuntime", "res://addons/dualnet/autoload/ClientRuntime.gd")
-	add_autoload_singleton("MessageBus", "res://addons/dualnet/autoload/MessageBus.gd")
+	add_autoload_singleton("NetCore", "res://addons/gnet/autoload/NetCore.gd")
+	add_autoload_singleton("Matchmaking", "res://addons/gnet/autoload/Matchmaking.gd")
+	add_autoload_singleton("ServerRuntime", "res://addons/gnet/autoload/ServerRuntime.gd")
+	add_autoload_singleton("ClientRuntime", "res://addons/gnet/autoload/ClientRuntime.gd")
+	add_autoload_singleton("MessageBus", "res://addons/gnet/autoload/MessageBus.gd")
 
-func _exit_tree():
+func _exit_tree() -> void:
 	"""Unregister autoload singletons when the plugin is disabled."""
 	remove_autoload_singleton("NetCore")
-	remove_autoload_singleton("Lobby")
+	remove_autoload_singleton("Matchmaking")
 	remove_autoload_singleton("ServerRuntime")
 	remove_autoload_singleton("ClientRuntime")
 	remove_autoload_singleton("MessageBus")

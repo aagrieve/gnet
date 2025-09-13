@@ -1,7 +1,7 @@
 extends Node
-class_name MessageBus
+class_name GMessageBus
 """
-Type-based message registry and dispatch.
+Type-based message registry and dispatch for gNet.
 
 Maps message 'types' to reliability channels and emits a unified signal
 on receive so game code doesn't need to handle raw byte arrays.
