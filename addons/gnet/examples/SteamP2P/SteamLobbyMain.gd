@@ -37,20 +37,37 @@ func _ready():
 	MessageBus.register_message("player_info", MessageBus.CH_RELIABLE_ORDERED)
 	MessageBus.message.connect(_on_message_received)
 	
-	# Set up Matchmaking signals if available
-	if Matchmaking.is_available():
+	# Wait for Matchmaking to be ready
+	if Matchmaking.is_ready():
+		_on_matchmaking_ready(Matchmaking.is_available())
+	else:
+		Matchmaking.matchmaking_ready.connect(_on_matchmaking_ready)
+		_update_status("Waiting for matchmaking to initialize...")
+
+func _on_matchmaking_ready(backend_available: bool):
+	"""Called when Matchmaking finishes initializing."""
+	print("=== Matchmaking Ready ===")
+	print("Backend available: ", backend_available)
+	print("Matchmaking available: ", Matchmaking.is_available())
+	print("========================")
+	
+	if backend_available:
+		# Set up Matchmaking signals
 		var backend = Matchmaking._backend
 		if backend:
 			backend.lobby_created.connect(_on_lobby_created)
 			backend.lobby_joined.connect(_on_lobby_joined)
 			backend.lobby_list_received.connect(_on_lobby_list_received)
+			print("Matchmaking signals connected!")
+		
+		_update_status("Ready - Steam P2P Mode")
+		# Auto-refresh lobbies on start
+		_refresh_lobbies()
+	else:
+		_update_status("Error: Steam matchmaking not available")
 	
-	_update_status("Ready - Steam P2P Mode")
 	_update_players_list()
 	_update_lobbies_list()
-	
-	# Auto-refresh lobbies on start
-	_refresh_lobbies()
 
 # Button handlers
 func _on_host_pressed():

@@ -1,9 +1,6 @@
 extends LobbyBackend
 """
-Steam lobby backend implementation.
-
-Implements create/list/join using GodotSteam's Lobby APIs. It also
-writes/reads metadata like protocol version, capacity, map, and mode.
+Steam lobby backend using the Steam singleton from pre-compiled bundle.
 """
 
 signal lobby_created(lobby_id)
@@ -14,21 +11,67 @@ signal lobby_data_updated()
 var current_lobby_id := 0
 var _steam = null
 var _pending_lobby_list := []
+var _initialization_complete := false
 
 func _init():
 	"""Initialize Steam singleton if available."""
-	if Engine.has_singleton("GodotSteam"):
-		_steam = Engine.get_singleton("GodotSteam")
-		_connect_steam_signals()
+	if Engine.has_singleton("Steam"):
+		_steam = Engine.get_singleton("Steam")
+		print("Steam singleton found, initializing...")
+		_initialize_steam()
 	else:
-		push_error("GodotSteam singleton not available")
+		push_error("Steam singleton not available")
+
+func _initialize_steam():
+	"""Initialize Steam API."""
+	if not _steam:
+		return
+	
+	print("Initializing Steam API...")
+	
+	# Initialize Steam API first
+	var init_result = _steam.steamInit()
+	print("Steam init result: ", init_result)
+	
+	# Use a simple delay instead of get_tree().create_timer()
+	await _simple_wait(1.0)
+	
+	# Now check status
+	print("=== Steam Status After Init ===")
+	print("Steam running: ", _steam.isSteamRunning())
+	
+	# Only check these if Steam is running
+	if _steam.isSteamRunning():
+		print("Steam logged on: ", _steam.loggedOn())
+		print("Steam ID: ", _steam.getSteamID())
+		print("Current App ID: ", _steam.getAppID())
+	else:
+		print("Steam not running - cannot check login status")
+	print("==============================")
+	
+	_connect_steam_signals()
+	_initialization_complete = true
+	print("Steam backend initialization complete")
+
+func _simple_wait(seconds: float):
+	"""Simple wait function that doesn't require get_tree()."""
+	var start_time = Time.get_ticks_msec()
+	var wait_ms = seconds * 1000
+	
+	while Time.get_ticks_msec() - start_time < wait_ms:
+		# Just wait - this will block but that's OK for initialization
+		pass
 
 func _connect_steam_signals():
 	"""Connect to Steam lobby signals."""
 	if _steam:
-		_steam.lobby_created.connect(_on_lobby_created)
-		_steam.lobby_joined.connect(_on_lobby_joined)
-		_steam.lobby_match_list.connect(_on_lobby_list_received)
+		# Connect to standard GodotSteam signals
+		if _steam.has_signal("lobby_created"):
+			_steam.lobby_created.connect(_on_lobby_created)
+		if _steam.has_signal("lobby_joined"):
+			_steam.lobby_joined.connect(_on_lobby_joined)
+		if _steam.has_signal("lobby_match_list"):
+			_steam.lobby_match_list.connect(_on_lobby_list_received)
 
 func create(opts := {}):
 	"""Create a Steam lobby and return its lobby_id."""
@@ -36,50 +79,61 @@ func create(opts := {}):
 		push_error("Steam not available")
 		return 0
 	
-	var lobby_type = opts.get("lobby_type", _steam.LOBBY_TYPE_PUBLIC)
+	# Check if Steam API is ready before making calls
+	if not _steam.isSteamRunning():
+		push_error("Steam not running")
+		return 0
+	
+	# Only check login if Steam is running (to avoid the error)
+	if not _steam.loggedOn():
+		push_error("Not logged into Steam")
+		return 0
+	
+	var lobby_type = opts.get("lobby_type", 1)
 	var max_members = opts.get("max_members", 4)
 	
-	# Create the lobby
-	_steam.create_lobby(lobby_type, max_members)
+	print("Creating lobby with type: ", lobby_type, " max_members: ", max_members)
+	_steam.createLobby(lobby_type, max_members)
 	
-	# We'll get the actual lobby_id in the callback
 	return 0
 
 func list(filters := {}):
-	"""Return an array of { id, slots_free, metadata, ... } for available lobbies."""
+	"""Return an array of available lobbies."""
 	if not _steam:
+		return []
+	
+	# Check if Steam API is ready
+	if not _steam.isSteamRunning():
+		push_error("Steam not running")
+		return []
+	
+	if not _steam.loggedOn():
+		push_error("Not logged into Steam")
 		return []
 	
 	_pending_lobby_list.clear()
 	
-	# Add distance filter if specified
-	var distance_filter = filters.get("distance", _steam.LOBBY_DISTANCE_FILTER_DEFAULT)
-	_steam.add_request_lobby_list_distance_filter(distance_filter)
-	
-	# Add string filters if specified
+	# Add filters if specified
 	if filters.has("version"):
-		_steam.add_request_lobby_list_string_filter("version", str(filters.version), _steam.LOBBY_COMPARISON_EQUAL)
+		_steam.addRequestLobbyListStringFilter("version", str(filters.version), 0)
 	
 	if filters.has("game_mode"):
-		_steam.add_request_lobby_list_string_filter("game_mode", str(filters.game_mode), _steam.LOBBY_COMPARISON_EQUAL)
+		_steam.addRequestLobbyListStringFilter("game_mode", str(filters.game_mode), 0)
 	
-	# Request the lobby list
-	_steam.request_lobby_list()
+	print("Requesting lobby list...")
+	_steam.requestLobbyList()
 	
 	return _pending_lobby_list
 
 func join(lobby_id):
-	"""
-	Join a Steam lobby by ID and return the host SteamID
-	so the Steam adapter can connect to it.
-	"""
+	"""Join a Steam lobby by ID."""
 	if not _steam:
 		return 0
 	
 	current_lobby_id = lobby_id
-	_steam.join_lobby(lobby_id)
+	print("Joining lobby: ", lobby_id)
+	_steam.joinLobby(lobby_id)
 	
-	# We'll return the host SteamID in the callback
 	return 0
 
 func leave():
@@ -87,7 +141,8 @@ func leave():
 	if not _steam or current_lobby_id == 0:
 		return
 	
-	_steam.leave_lobby(current_lobby_id)
+	print("Leaving lobby: ", current_lobby_id)
+	_steam.leaveLobby(current_lobby_id)
 	current_lobby_id = 0
 
 func update_metadata(meta: Dictionary):
@@ -95,30 +150,32 @@ func update_metadata(meta: Dictionary):
 	if not _steam or current_lobby_id == 0:
 		return
 	
+	print("Updating lobby metadata: ", meta)
 	for key in meta.keys():
-		_steam.set_lobby_data(current_lobby_id, str(key), str(meta[key]))
+		_steam.setLobbyData(current_lobby_id, str(key), str(meta[key]))
 
 func get_lobby_owner(lobby_id):
 	"""Get the owner (host) SteamID of a lobby."""
 	if not _steam:
 		return 0
-	return _steam.get_lobby_owner(lobby_id)
+	return _steam.getLobbyOwner(lobby_id)
 
 func get_lobby_member_count(lobby_id):
 	"""Get the number of members in a lobby."""
 	if not _steam:
 		return 0
-	return _steam.get_num_lobby_members(lobby_id)
+	return _steam.getNumLobbyMembers(lobby_id)
 
 func get_lobby_data(lobby_id, key: String):
 	"""Get metadata value from a lobby."""
 	if not _steam:
 		return ""
-	return _steam.get_lobby_data(lobby_id, key)
+	return _steam.getLobbyData(lobby_id, key)
 
 # Steam callback handlers
 func _on_lobby_created(connect: int, lobby_id: int):
 	"""Called when lobby creation completes."""
+	print("Lobby creation callback: connect=", connect, " lobby_id=", lobby_id)
 	if connect == 1:  # Success
 		current_lobby_id = lobby_id
 		emit_signal("lobby_created", lobby_id)
@@ -127,6 +184,7 @@ func _on_lobby_created(connect: int, lobby_id: int):
 
 func _on_lobby_joined(lobby_id: int, permissions: int, locked: bool, response: int):
 	"""Called when joining a lobby completes."""
+	print("Lobby joined callback: lobby_id=", lobby_id, " response=", response)
 	if response == 1:  # Success
 		current_lobby_id = lobby_id
 		emit_signal("lobby_joined", lobby_id)
@@ -135,6 +193,7 @@ func _on_lobby_joined(lobby_id: int, permissions: int, locked: bool, response: i
 
 func _on_lobby_list_received(lobbies: Array):
 	"""Called when lobby list request completes."""
+	print("Lobby list received: ", lobbies.size(), " lobbies")
 	_pending_lobby_list.clear()
 	
 	for lobby_id in lobbies:
@@ -147,7 +206,8 @@ func _on_lobby_list_received(lobbies: Array):
 			"game_mode": get_lobby_data(lobby_id, "game_mode"),
 			"name": get_lobby_data(lobby_id, "name")
 		}
-		lobby_info["slots_free"] = lobby_info.max_members - lobby_info.member_count
+		lobby_info["slots_free"] = max(0, lobby_info.max_members - lobby_info.member_count)
 		_pending_lobby_list.append(lobby_info)
+		print("Found lobby: ", lobby_info)
 	
 	emit_signal("lobby_list_received", _pending_lobby_list)

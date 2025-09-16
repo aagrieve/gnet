@@ -1,6 +1,3 @@
-res://addons/gnet/examples/EnetP2P/LobbyMain.tscn
-res://addons/gnet/examples/EnetP2P/LobbyMain.gd
 res://addons/gnet/examples/SteamP2P/SteamLobbyMain.tscn
-res://addons/gnet/examples/SteamP2P/SteamLobbyMain.gd
+res://addons/gnet/examples/Test/test.tscn
 res://addons/gnet/lobby-backends/steam-backend.gd
-res://addons/gnet/autoload/NetCore.gd
