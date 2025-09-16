@@ -26,6 +26,18 @@ var _mp_signals_wired := false
 func _ready() -> void:
 	"""Enable main-loop processing; adapter may need per-frame polling."""
 	set_process(true)
+	print("=== Initialization Debug ===")
+	print("1. NetCore adapter: ", _adapter_name)
+	print("2. Engine has GodotSteam: ", Engine.has_singleton("GodotSteam"))
+	print("3. Matchmaking backend exists: ", Matchmaking._backend != null)
+	
+	if Engine.has_singleton("GodotSteam"):
+		var steam = Engine.get_singleton("GodotSteam")
+		print("4. Steam initialized: ", steam.is_steam_running())
+		print("5. Steam logged on: ", steam.logged_on())
+	
+	print("6. Matchmaking available: ", Matchmaking.is_available())
+	print("===============================")
 
 func use_adapter(name:String) -> void:
 	"""Select the transport adapter by name (e.g., 'steam' or 'enet')."""

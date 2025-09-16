@@ -3,6 +3,7 @@ extends Control
 
 @onready var host_button = $VBoxContainer/HBoxButtons/HostButton
 @onready var join_button = $VBoxContainer/HBoxButtons/JoinButton
+@onready var disconnect_button = $VBoxContainer/HBoxButtons/DisconnectButton
 @onready var ip_input = $VBoxContainer/HBoxInputs/IPInput
 @onready var port_input = $VBoxContainer/HBoxInputs/PortLabel
 @onready var status_label = $VBoxContainer/StatusLabel
@@ -14,6 +15,7 @@ func _ready():
 	# Set up button connections
 	host_button.pressed.connect(_on_host_pressed)
 	join_button.pressed.connect(_on_join_pressed)
+	disconnect_button.pressed.connect(_on_disconnect_pressed)
 	
 	# Set up NetCore signals
 	NetCore.peer_connected.connect(_on_peer_connected)
@@ -36,6 +38,8 @@ func _ready():
 	port_input.text = "3456"
 	_update_status("Ready to host or join")
 
+# Button Presses
+# -----------------------------------------------------------------------------
 func _on_host_pressed():
 	_update_status("Starting host...")
 	
@@ -57,8 +61,16 @@ func _on_join_pressed():
 	NetCore.set_mode("client")
 	
 	var target = ip_input.text + ":" + port_input.text
-	NetCore.connect_to(target)
+	NetCore.connect_to_host(target)
 
+func _on_disconnect_pressed():
+	NetCore.disconnect_from_host()
+
+# -----------------------------------------------------------------------------
+# end Button Presses
+
+# Lobby Connections
+# -----------------------------------------------------------------------------
 func _on_peer_connected(peer_id: int):
 	connected_peers.append(peer_id)
 	_update_players_list()
@@ -76,13 +88,16 @@ func _on_peer_disconnected(peer_id: int):
 	_update_players_list()
 	_update_status("Peer %d disconnected" % peer_id)
 
+	if peer_id == 1:
+		NetCore.disconnect_from_host()
+
 func _on_session_started(ctx: Dictionary):
 	_update_status("Session started as %s using %s" % [ctx.mode, ctx.adapter])
 	host_button.disabled = true
 	join_button.disabled = true
 
 func _on_session_ended(ctx: Dictionary):
-	_update_status("Session ended")
+	_update_status("Ready to host or join")
 	connected_peers.clear()
 	_update_players_list()
 	host_button.disabled = false
@@ -105,11 +120,16 @@ func _update_status(text: String):
 	print("Lobby: " + text)
 
 func _update_players_list():
+	# Check if we're in an active session
+	if get_tree().get_multiplayer().multiplayer_peer == null:
+		players_list.text = "Not connected to any session"
+		return
+	
 	var text = "Connected Players:\n"
 	text += "- You (ID: %d)\n" % get_tree().get_multiplayer().get_unique_id()
 	for peer_id in connected_peers:
 		text += "- Peer %d\n" % peer_id
 	players_list.text = text
 
-func _on_disconnect_pressed():
-	NetCore.disconnect_from_host()
+# -----------------------------------------------------------------------------
+# end Lobby Connections

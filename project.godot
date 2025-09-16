@@ -21,6 +21,7 @@ Lobby="*res://addons/gnet/autoload/Matchmaking.gd"
 ServerRuntime="*res://addons/gnet/autoload/ServerRuntime.gd"
 ClientRuntime="*res://addons/gnet/autoload/ClientRuntime.gd"
 MessageBus="*res://addons/gnet/autoload/MessageBus.gd"
+Matchmaking="*res://addons/gnet/autoload/Matchmaking.gd"
 
 [editor_plugins]
 
