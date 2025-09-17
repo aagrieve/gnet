@@ -20,7 +20,8 @@ func configure(config := {}) -> void:
 func host(opts := {}):
 	"""Create a SteamMultiplayerPeer in host mode and return it."""
 	_peer = SteamMultiplayerPeer.new()
-	var ok := _peer.create_host(0) # TODO: pass channel config or relay flags if needed
+	var max_players = opts.get("max_players", 4)
+	var ok: Error = _peer.create_lobby(SteamMultiplayerPeer.LOBBY_TYPE_PUBLIC, max_players)
 	if ok != OK:
 		emit_signal("gnet_error", "HOST", "Steam host create failed: %s" % ok)
 		return null
@@ -32,7 +33,7 @@ func connect_to(target):
 	Returns the connected MultiplayerPeer or null on error.
 	"""
 	_peer = SteamMultiplayerPeer.new()
-	var ok := _peer.create_client(target)
+	var ok: Error = _peer.connect_lobby(target)
 	if ok != OK:
 		emit_signal("gnet_error", "CONNECT", "Steam client connect failed (target=%s): %s" % [str(target), ok])
 		return null
@@ -46,4 +47,7 @@ func close() -> void:
 
 func poll(delta: float) -> void:
 	"""Pump Steam callbacks if your GodotSteam setup requires manual servicing."""
-	pass
+	if Engine.has_singleton("Steam"):
+		print("Pumping Steam callbacks")
+		var steam = Engine.get_singleton("Steam")
+		steam.run_callbacks()

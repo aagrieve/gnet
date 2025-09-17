@@ -25,6 +25,11 @@ func _ready() -> void:
 	_is_ready = true
 	emit_signal("matchmaking_ready", _backend != null)
 
+func _process(_delta):
+	"""Process Steam callbacks for lobby operations."""
+	if _backend	and "poll_steam_callbacks" in _backend:
+		_backend.poll_steam_callbacks()
+
 func is_available() -> bool:
 	"""Check if matchmaking is available for the current adapter."""
 	return _backend != null

@@ -65,16 +65,47 @@ func _simple_wait(seconds: float):
 func _connect_steam_signals():
 	"""Connect to Steam lobby signals."""
 	if _steam:
+		print("=== Steam Signal Debug ===")
+		
 		# Connect to standard GodotSteam signals
 		if _steam.has_signal("lobby_created"):
-			_steam.lobby_created.connect(_on_lobby_created)
+			var result = _steam.lobby_created.connect(_on_lobby_created)
+			print("Connected lobby_created signal, result:", result)
+		else:
+			print("WARNING: lobby_created signal not found")
+			
 		if _steam.has_signal("lobby_joined"):
 			_steam.lobby_joined.connect(_on_lobby_joined)
+			print("Connected lobby_joined signal")
+		else:
+			print("WARNING: lobby_joined signal not found")
+			
 		if _steam.has_signal("lobby_match_list"):
 			_steam.lobby_match_list.connect(_on_lobby_list_received)
+			print("Connected lobby_match_list signal")
+		else:
+			print("WARNING: lobby_match_list signal not found")
+			
+		if _steam.has_signal("lobby_data_update"):
+			_steam.lobby_data_update.connect(_on_lobby_data_update)
+			print("Connected lobby_data_update signal")
+		else:
+			print("WARNING: lobby_data_update signal not found")
+		print("========================")
+
+
+func poll_steam_callbacks():
+	"""Process Steam callbacks for lobby operations."""
+	if _steam:
+		_steam.run_callbacks()
+
+func _on_lobby_data_update(success: int, lobby_id: int, member_id: int):
+	"""Called when lobby data is updated."""
+	print("Lobby data update callback: success=", success, " lobby_id=", lobby_id, " member_id=", member_id)
+	emit_signal("lobby_data_updated")
 
 func create(opts := {}):
-	"""Create a Steam lobby and return its lobby_id."""
+	"""Create a Steam lobby"""
 	if not _steam:
 		push_error("Steam not available")
 		return 0
@@ -93,6 +124,10 @@ func create(opts := {}):
 	var max_members = opts.get("max_members", 4)
 	
 	print("Creating lobby with type: ", lobby_type, " max_members: ", max_members)
+	print("Signals connected - lobby_created:", _steam.lobby_created.is_connected(_on_lobby_created))
+	print("Signals connected - lobby_joined:", _steam.lobby_joined.is_connected(_on_lobby_joined))
+	print("Signals connected - lobby_data_update:", _steam.lobby_data_update.is_connected(_on_lobby_data_update))
+	
 	_steam.createLobby(lobby_type, max_members)
 	
 	return 0
