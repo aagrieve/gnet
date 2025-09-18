@@ -23,6 +23,9 @@ text = "Simple Steam P2P Lobby"
 [node name="HBoxInputs" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
+[node name="LobbyIDInput" type="LineEdit" parent="VBoxContainer/HBoxInputs"]
+layout_mode = 2
+
 [node name="HBoxButtons" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 

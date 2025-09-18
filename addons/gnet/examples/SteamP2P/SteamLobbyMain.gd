@@ -8,6 +8,7 @@ extends Control
 @onready var status_label = $VBoxContainer/StatusLabel
 @onready var players_list = $VBoxContainer/PlayersList
 @onready var lobbies_list = $VBoxContainer/LobbiesList
+@onready var lobby_id_input = $VBoxContainer/HBoxInputs/LobbyIDInput
 
 var connected_peers = []
 var is_host = false
@@ -49,8 +50,13 @@ func _on_host_pressed():
 	NetCore.host(host_opts)
 
 func _on_join_pressed():
-	# For now, disable join - you'll need Steam invites or direct lobby IDs
-	_update_status("Use Steam friends list to join lobbies for now")
+	var lobby_id_text = lobby_id_input.text
+	if lobby_id_text.is_valid_int():
+		var lobby_id = lobby_id_text.to_int()
+		NetCore.set_mode("client")
+		NetCore.connect_to_host(lobby_id)
+	else:
+		_update_status("Please enter a valid lobby ID")
 
 func _on_refresh_pressed():
 	# For now, disable lobby browsing

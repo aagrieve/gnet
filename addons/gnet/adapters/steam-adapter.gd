@@ -8,6 +8,7 @@ signal gnet_error(code, details)
 var _peer : SteamMultiplayerPeer = null
 var _steam_initialized := false
 var _steam_ready := false
+var _current_lobby_id := 0
 
 func _init():
 	name = "steam"
@@ -70,6 +71,10 @@ func host(opts := {}):
 		return null
 	
 	_peer = SteamMultiplayerPeer.new()
+	
+	# Connect to the SteamMultiplayerPeer's lobby_created signal
+	_peer.lobby_created.connect(_on_lobby_created_for_id)
+	
 	var max_players = opts.get("max_players", 4)
 	
 	print("Attempting to create lobby with max_players: ", max_players)
@@ -82,6 +87,17 @@ func host(opts := {}):
 
 	print("Lobby created successfully!")
 	return _peer
+
+func _on_lobby_created_for_id(result: int, lobby_id: int):
+	"""Called when SteamMultiplayerPeer lobby creation completes."""
+	if result == 1:  # Success (Steam.Result.RESULT_OK)
+		_current_lobby_id = lobby_id
+		print("=== LOBBY CREATED ===")
+		print("Lobby ID: ", lobby_id)
+		print("Share this ID with friends to join!")
+		print("====================")
+	else:
+		print("Lobby creation failed with result: ", result)
 
 func connect_to(target):
 	"""
