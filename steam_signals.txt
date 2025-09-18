@@ -1,0 +1,558 @@
+Steam Signals (195 total)
+==================================================
+
+1. file_details_result
+   Parameters: result:2, file_size:2, file_hash:2, flags:2
+
+2. dlc_installed
+   Parameters: app:2
+
+3. new_launch_url_parameters
+
+4. timed_trial_status
+   Parameters: app_id:2, is_offline:1, seconds_allowed:2, seconds_played:2
+
+5. avatar_image_loaded
+   Parameters: avatar_id:2, avatar_index:2, width:2, height:2
+
+6. avatar_loaded
+   Parameters: avatar_id:2, size:2, data:28
+
+7. change_server_requested
+   Parameters: server:4, password:4
+
+8. clan_activity_downloaded
+   Parameters: activity:27
+
+9. connected_chat_join
+   Parameters: chat_id:2, steam_id:2
+
+10. connected_chat_leave
+   Parameters: chat_id:2, steam_id:2, kicked:1, dropped:1
+
+11. connected_clan_chat_message
+   Parameters: chat:27
+
+12. connected_friend_chat_message
+   Parameters: chat:27
+
+13. enumerate_following_list
+   Parameters: message:4, following:28
+
+14. equipped_profile_items
+   Parameters: result:2, steam_id:2, profile_data:27
+
+15. equipped_profile_items_changed
+   Parameters: steam_id:2
+
+16. friend_rich_presence_update
+   Parameters: steam_id:2, app_id:2
+
+17. get_follower_count
+   Parameters: result:2, steam_id:2, count:2
+
+18. is_following
+   Parameters: result:2, steam_id:2, following:1
+
+19. join_clan_chat_complete
+   Parameters: chat_id:2, response:2
+
+20. join_game_requested
+   Parameters: user:2, connect:4
+
+21. join_requested
+   Parameters: lobby_id:2, steam_id:2
+
+22. overlay_browser_protocol
+   Parameters: uri:4
+
+23. overlay_toggled
+   Parameters: active:1, user_initiated:1, app_id:2
+
+24. persona_state_change
+   Parameters: steam_id:2, flags:2
+
+25. request_clan_officer_list
+   Parameters: message:4, officer_list:28
+
+26. unread_chat_messages_changed
+
+27. search_for_game_progress
+   Parameters: result:2, search_id:2, search_progress:27
+
+28. search_for_game_result
+   Parameters: result:2, search_id:2, search_result:27
+
+29. request_players_for_game_progress
+   Parameters: result:2, search_id:2
+
+30. request_players_for_game_result
+   Parameters: result:2, search_id:2, player_data:27
+
+31. request_players_for_game_final_result
+   Parameters: result:2, search_id:2, game_id:2
+
+32. submit_player_result
+   Parameters: result:2, game_id:2, player_id:2
+
+33. end_game_result
+   Parameters: result:2, game_id:2
+
+34. html_browser_ready
+   Parameters: browser_handle:2
+
+35. html_can_go_backandforward
+   Parameters: browser_handle:2, go_back:1, go_forward:1
+
+36. html_changed_title
+   Parameters: browser_handle:2, title:4
+
+37. html_close_browser
+   Parameters: browser_handle:2
+
+38. html_file_open_dialog
+   Parameters: browser_handle:2, title:4, initial_file:4
+
+39. html_finished_request
+   Parameters: browser_handle:2, url:4, title:4
+
+40. html_hide_tooltip
+   Parameters: browser_handle:2
+
+41. html_horizontal_scroll
+   Parameters: browser_handle:2, scroll_data:27
+
+42. html_js_alert
+   Parameters: browser_handle:2, message:4
+
+43. html_js_confirm
+   Parameters: browser_handle:2, message:4
+
+44. html_link_at_position
+   Parameters: browser_handle:2, link_data:27
+
+45. html_needs_paint
+   Parameters: browser_handle:2, page_data:27
+
+46. html_new_window
+   Parameters: browser_handle:2, window_data:27
+
+47. html_open_link_in_new_tab
+   Parameters: browser_handle:2, url:4
+
+48. html_search_results
+   Parameters: browser_handle:2, results:2, current_match:2
+
+49. html_set_cursor
+   Parameters: browser_handle:2, mouse_cursor:2
+
+50. html_show_tooltip
+   Parameters: browser_handle:2, message:4
+
+51. html_start_request
+   Parameters: browser_handle:2, url:4, target:4, post_data:4, redirect:1
+
+52. html_status_text
+   Parameters: browser_handle:2, message:4
+
+53. html_update_tooltip
+   Parameters: browser_handle:2, message:4
+
+54. html_url_changed
+   Parameters: browser_handle:2, url_data:27
+
+55. html_vertical_scroll
+   Parameters: browser_handle:2, scroll_data:27
+
+56. http_request_completed
+   Parameters: cookie_handle:2, context_value:2, request_success:1, status_code:2, body_size:2
+
+57. http_request_data_received
+   Parameters: cookie_handle:2, context_value:2, offset:2, bytes_received:2
+
+58. http_request_headers_received
+   Parameters: cookie_handle:2, context_value:2
+
+59. input_action_event
+   Parameters: input_handle:2, event_type:2, action_handle:2, is_active:1, action_data:27
+
+60. input_device_connected
+   Parameters: input_handle:2
+
+61. input_device_disconnected
+   Parameters: input_handle:2
+
+62. input_configuration_loaded
+   Parameters: app_id:2, device_handle:2, config_data:27
+
+63. input_gamepad_slot_change
+   Parameters: app_id:2, device_handle:2, device_type:2, old_gamepad_slot:2, new_gamepad_slot:2
+
+64. inventory_definition_update
+   Parameters: definitions:28
+
+65. inventory_eligible_promo_item
+   Parameters: result:2, cached:1, definitions:28
+
+66. inventory_full_update
+   Parameters: inventory_handle:2
+
+67. inventory_result_ready
+   Parameters: result:2, inventory_handle:2
+
+68. inventory_start_purchase_result
+   Parameters: result:4, order_id:2, transaction_id:2
+
+69. inventory_request_prices_result
+   Parameters: result:2, currency:4
+
+70. favorites_list_accounts_updated
+   Parameters: result:2
+
+71. favorites_list_changed
+   Parameters: favorite:27
+
+72. lobby_message
+   Parameters: lobby_id:2, user:2, message:4, chat_type:2
+
+73. lobby_chat_update
+   Parameters: lobby_id:2, changed_id:2, making_change_id:2, chat_state:2
+
+74. lobby_created
+   Parameters: connect:2, lobby_id:2
+
+75. lobby_data_update
+   Parameters: success:2, lobby_id:2, member_id:2
+
+76. lobby_joined
+   Parameters: lobby:2, permissions:2, locked:1, response:2
+
+77. lobby_game_created
+   Parameters: lobby_id:2, server_id:2, server_ip:4, port:2
+
+78. lobby_invite
+   Parameters: inviter:2, lobby:2, game:2
+
+79. lobby_match_list
+   Parameters: lobbies:28
+
+80. lobby_kicked
+   Parameters: lobby_id:2, admin_id:2, due_to_disconnect:2
+
+81. request_server_list_server_responded
+   Parameters: request_handle:2, server:2
+
+82. request_server_list_server_failed_to_respond
+   Parameters: request_handle:2, server:2
+
+83. request_server_list_refresh_complete
+   Parameters: request_handle:2, response:2
+
+84. ping_server_responded
+   Parameters: server_details:27
+
+85. ping_server_failed_to_respond
+
+86. player_details_player_added
+   Parameters: name:4, score:2, time_played:3
+
+87. player_details_failed_to_respond
+
+88. player_details_refresh_complete
+
+89. server_rules_responded
+   Parameters: rule:4, value:4
+
+90. server_rules_failed_to_respond
+
+91. server_rules_refresh_complete
+
+92. music_playback_status_has_changed
+
+93. music_volume_has_changed
+   Parameters: new_volume:3
+
+94. music_player_remote_to_front
+
+95. music_player_remote_will_activate
+
+96. music_player_remote_will_deactivate
+
+97. music_player_selects_playlist_entry
+   Parameters: entry:2
+
+98. music_player_selects_queue_entry
+   Parameters: entry:2
+
+99. music_player_wants_looped
+   Parameters: looped:1
+
+100. music_player_wants_pause
+
+101. music_player_wants_playing_repeat_status
+   Parameters: status:2
+
+102. music_player_wants_play_next
+
+103. music_player_wants_play_previous
+
+104. music_player_wants_play
+
+105. music_player_wants_shuffled
+   Parameters: shuffled:1
+
+106. music_player_wants_volume
+   Parameters: volume:3
+
+107. music_player_will_quit
+
+108. p2p_session_request
+   Parameters: remote_steam_id:2
+
+109. p2p_session_connect_fail
+   Parameters: remote_steam_id:2, session_error:2
+
+110. network_messages_session_request
+   Parameters: remote_steam_id:2
+
+111. network_messages_session_failed
+   Parameters: reason:2, remote_steam_id:2, connection_state:2, debug_message:4
+
+112. network_connection_status_changed
+   Parameters: connect_handle:2, connection:27, old_state:2
+
+113. network_authentication_status
+   Parameters: available:2, debug_message:4
+
+114. fake_ip_result
+   Parameters: result:2, remote_fake_steam_id:2, fake_ip:4, port_list:28
+
+115. relay_network_status
+   Parameters: available:2, ping_measurement:2, available_config:2, available_relay:2, debug_message:4
+
+116. parental_setting_changed
+
+117. join_party
+   Parameters: result:2, beacon_id:2, steam_id:2, connect_string:4
+
+118. create_beacon
+   Parameters: result:2, beacon_id:2
+
+119. reservation_notification
+   Parameters: beacon_id:2, steam_id:2
+
+120. change_num_open_slots
+   Parameters: result:2
+
+121. available_beacon_locations_updated
+
+122. active_beacons_updated
+
+123. remote_play_session_connected
+   Parameters: session_id:2
+
+124. remote_play_session_disconnected
+   Parameters: session_id:2
+
+125. file_read_async_complete
+   Parameters: file_read:27
+
+126. file_share_result
+   Parameters: result:2, handle:2, name:4
+
+127. file_write_async_complete
+   Parameters: result:2
+
+128. download_ugc_result
+   Parameters: result:2, download_data:27
+
+129. unsubscribe_item
+   Parameters: result:2, file_id:2
+
+130. subscribe_item
+   Parameters: result:2, file_id:2
+
+131. local_file_changed
+
+132. screenshot_ready
+   Parameters: handle:2, result:2
+
+133. screenshot_requested
+
+134. timeline_event_recording_exists
+   Parameters: event_id:2, recording_exists:1
+
+135. timeline_game_phase_recording_exists
+   Parameters: phase_id:4, recording_ms:2, longest_clip_ms:2, clip_count:2, screenshot_count:2
+
+136. add_app_dependency_result
+   Parameters: result:2, file_id:2, app_id:2
+
+137. add_ugc_dependency_result
+   Parameters: result:2, file_id:2, child_id:2
+
+138. item_created
+   Parameters: result:2, file_id:2, accept_tos:1
+
+139. item_downloaded
+   Parameters: result:2, file_id:2, app_id:2
+
+140. get_app_dependencies_result
+   Parameters: result:2, file_id:2, app_dependencies:2, total_app_dependencies:2
+
+141. item_deleted
+   Parameters: result:2, file_id:2
+
+142. get_item_vote_result
+   Parameters: result:2, file_id:2, vote_up:1, vote_down:1, vote_skipped:1
+
+143. item_installed
+   Parameters: app_id:2, file_id:2
+
+144. remove_app_dependency_result
+   Parameters: result:2, file_id:2, app_id:2
+
+145. remove_ugc_dependency_result
+   Parameters: result:2, file_id:2, child_id:2
+
+146. set_user_item_vote
+   Parameters: result:2, file_id:2, vote_up:1
+
+147. start_playtime_tracking
+   Parameters: result:2
+
+148. ugc_query_completed
+   Parameters: handle:2, result:2, results_returned:2, total_matching:2, cached:1
+
+149. stop_playtime_tracking
+   Parameters: result:2
+
+150. item_updated
+   Parameters: result:2, need_to_accept_tos:1
+
+151. user_favorite_items_list_changed
+   Parameters: result:2, file_id:2, was_add_request:1
+
+152. workshop_eula_status
+   Parameters: result:2, app_id:2, eula_data:27
+
+153. user_subscribed_items_list_changed
+   Parameters: app_id:2
+
+154. client_game_server_deny
+   Parameters: app_id:2, ip:4, server_port:2, secure:2, reason:2
+
+155. duration_control
+   Parameters: result:2, duration:27
+
+156. encrypted_app_ticket_response
+   Parameters: result:4
+
+157. game_web_callback
+   Parameters: url:4
+
+158. get_auth_session_ticket_response
+   Parameters: auth_ticket:2, result:2
+
+159. get_ticket_for_web_api
+   Parameters: auth_ticket:2, result:2, ticket_size:2, ticket_buffer:28
+
+160. ipc_failure
+   Parameters: type:2
+
+161. licenses_updated
+
+162. microtransaction_auth_response
+   Parameters: app_id:2, order_id:2, authorized:1
+
+163. steam_server_connect_failed
+   Parameters: result:2, retrying:1
+
+164. steam_server_connected
+
+165. steam_server_disconnected
+
+166. store_auth_url_response
+   Parameters: url:4
+
+167. validate_auth_ticket_response
+   Parameters: auth_id:2, reponse:2, owner_id:2
+
+168. current_stats_received
+   Parameters: game_id:2, result:2, user_id:2
+
+169. global_achievement_percentages_ready
+   Parameters: game_id:2, result:2
+
+170. global_stats_received
+   Parameters: game_id:2, result:4
+
+171. leaderboard_find_result
+   Parameters: leaderboard_handle:2, found:2
+
+172. leaderboard_scores_downloaded
+   Parameters: message:4, leaderboard_handle:2, leaderboard_entries:28
+
+173. leaderboard_score_uploaded
+   Parameters: success:1, this_handle:2, this_score:27
+
+174. leaderboard_ugc_set
+   Parameters: leaderboard_handle:2, result:4
+
+175. number_of_current_players
+   Parameters: success:2, players:2
+
+176. user_achievement_icon_fetched
+   Parameters: game_id:2, achievement_name:4, was_achieved:1, icon_handle:2
+
+177. user_achievement_stored
+   Parameters: game_id:2, group_achieve:1, achievement_name:4, current_progress:2, max_progress:2
+
+178. user_stats_received
+   Parameters: game_id:2, result:2, user_id:2
+
+179. user_stats_stored
+   Parameters: game_id:2, result:2
+
+180. user_stats_unloaded
+   Parameters: user_id:2
+
+181. check_file_signature
+   Parameters: signature:2
+
+182. gamepad_text_input_dismissed
+   Parameters: submitted:1, entered_text:4, app_id:2
+
+183. ip_country
+
+184. low_power
+   Parameters: power:2
+
+185. steam_api_call_completed
+   Parameters: async_call:2, callback:2, parameter:2
+
+186. steam_shutdown
+
+187. app_resuming_from_suspend
+
+188. floating_gamepad_text_input_dismissed
+
+189. filter_text_dictionary_changed
+   Parameters: language:2
+
+190. broadcast_upload_start
+   Parameters: is_rtmp:1
+
+191. broadcast_upload_stop
+   Parameters: result:2
+
+192. get_opf_settings_result
+   Parameters: result:2, app_id:2
+
+193. get_video_result
+   Parameters: result:2, app_id:2, url:4
+
+194. script_changed
+
+195. property_list_changed
+

@@ -1,7 +1,9 @@
 res://addons/gnet/examples/SteamP2P/SteamLobbyMain.tscn
 res://addons/gnet/examples/Test/test.tscn
-res://addons/gnet/lobby-backends/steam-backend.gd
+res://addons/gnet/adapters/steam-adapter.gd
 res://addons/gnet/autoload/NetCore.gd
 res://addons/gnet/examples/SteamP2P/SteamLobbyMain.gd
-res://addons/gnet/adapters/steam-adapter.gd
 res://addons/gnet/autoload/Matchmaking.gd
+res://addons/gnet/lobby-backends/backend-interface.gd
+res://temp.gd
+res://temp.tscn
