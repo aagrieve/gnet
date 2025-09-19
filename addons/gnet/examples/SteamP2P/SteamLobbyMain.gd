@@ -5,6 +5,7 @@ extends Control
 @onready var join_button = $VBoxContainer/HBoxButtons/JoinButton
 @onready var disconnect_button = $VBoxContainer/HBoxButtons/DisconnectButton
 @onready var refresh_button = $VBoxContainer/HBoxButtons/RefreshButton
+@onready var start_button = $VBoxContainer/HBoxButtons/StartButton
 @onready var status_label = $VBoxContainer/StatusLabel
 @onready var players_list = $VBoxContainer/PlayersList
 @onready var lobbies_list = $VBoxContainer/LobbiesList
@@ -19,6 +20,7 @@ func _ready():
 	join_button.pressed.connect(_on_join_pressed)
 	disconnect_button.pressed.connect(_on_disconnect_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
+	start_button.pressed.connect(_on_start_pressed)
 	
 	# Configure NetCore to use Steam
 	NetCore.use_adapter("steam")
@@ -34,6 +36,7 @@ func _ready():
 	
 	# Set up MessageBus for player info
 	MessageBus.register_message("player_info", MessageBus.CH_RELIABLE_ORDERED)
+	MessageBus.register_message("game_start", MessageBus.CH_RELIABLE_ORDERED)
 	MessageBus.message.connect(_on_message_received)
 	
 	_update_status("Ready - Click Host to create lobby")
@@ -64,6 +67,12 @@ func _on_refresh_pressed():
 
 func _on_disconnect_pressed():
 	_disconnect_from_session()
+
+func _on_start_pressed():
+	_update_status("Starting game...")
+	MessageBus.send("game_start", {"starting": true})
+	await get_tree().create_timer(1.0).timeout
+	get_tree().change_scene_to_file("res://addons/gnet/examples/CapsuleRoom/Game.tscn")
 
 func _disconnect_from_session():
 	NetCore.disconnect_from_host()
@@ -130,6 +139,11 @@ func _on_message_received(type: String, from_peer: int, payload: Dictionary):
 	match type:
 		"player_info":
 			_update_status("Received player info from %d: %s" % [from_peer, payload.name])
+		"game_start":
+			if not is_host:
+				_update_status("Host is starting the game...")
+				await get_tree().create_timer(0.5).timeout
+				get_tree().change_scene_to_file("res://addons/gnet/examples/CapsuleRoom/Game.tscn")
 
 # UI Updates
 func _update_status(text: String):

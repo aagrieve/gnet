@@ -50,6 +50,10 @@ text = "Join"
 layout_mode = 2
 text = "Disconnect"
 
+[node name="StartButton" type="Button" parent="VBoxContainer/HBoxButtons"]
+layout_mode = 2
+text = "Start"
+
 [node name="StatusLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 

@@ -22,22 +22,32 @@ func register_message(t:String, channel:int) -> void:
 	"""Register or override the reliability channel for a message type."""
 	_registry[t] = channel
 
+# Temporarily add to MessageBus.gd send() function
 func send(t:String, payload:Dictionary, to:Variant=null) -> void:
 	"""
 	Serialize and send a message by type.
 	If 'to' is null, broadcast; otherwise target a specific peer_id.
 	"""
+	print("MessageBus.send() called - type: ", t, " payload: ", payload)
 	var channel := _registry.get(t, CH_RELIABLE_ORDERED)
 	var mp := get_tree().get_multiplayer()
 	var bytes := var_to_bytes({"t":t,"p":payload})
+	
+	print("Channel: ", channel, " Multiplayer peer: ", mp.multiplayer_peer != null)
+	
 	if to == null:
-		mp.send_bytes(bytes, channel)
+		print("Broadcasting to all peers")
+		# Call the RPC function, not send_bytes directly
+		_rx.rpc(bytes)
 	else:
-		mp.send_bytes(bytes, channel, int(to))
+		print("Sending to specific peer: ", to)
+		# Call the RPC function to specific peer
+		_rx.rpc_id(int(to), bytes)
 
 @rpc("any_peer")
 func _rx(bytes:PackedByteArray) -> void:
-	"""RPC receiver: decode bytes and emit the unified 'message' signal."""
+	print("MessageBus._rx() received bytes from: ", get_tree().get_multiplayer().get_remote_sender_id())
 	var obj = bytes_to_var(bytes)
 	var from_id := get_tree().get_multiplayer().get_remote_sender_id()
+	print("Decoded message type: ", obj.get("t",""), " emitting signal...")
 	emit_signal("message", obj.get("t",""), from_id, obj.get("p", {}))

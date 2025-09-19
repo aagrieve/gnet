@@ -4,6 +4,7 @@ extends Control
 @onready var host_button = $VBoxContainer/HBoxButtons/HostButton
 @onready var join_button = $VBoxContainer/HBoxButtons/JoinButton
 @onready var disconnect_button = $VBoxContainer/HBoxButtons/DisconnectButton
+@onready var start_button = $VBoxContainer/HBoxButtons/StartButton
 @onready var ip_input = $VBoxContainer/HBoxInputs/IPInput
 @onready var port_input = $VBoxContainer/HBoxInputs/PortLabel
 @onready var status_label = $VBoxContainer/StatusLabel
@@ -16,6 +17,7 @@ func _ready():
 	host_button.pressed.connect(_on_host_pressed)
 	join_button.pressed.connect(_on_join_pressed)
 	disconnect_button.pressed.connect(_on_disconnect_pressed)
+	start_button.pressed.connect(_on_start_pressed)
 	
 	# Set up NetCore signals
 	NetCore.peer_connected.connect(_on_peer_connected)
@@ -27,6 +29,7 @@ func _ready():
 	# Set up MessageBus for chat/communication
 	MessageBus.register_message("player_info", MessageBus.CH_RELIABLE_ORDERED)
 	MessageBus.register_message("chat", MessageBus.CH_RELIABLE_ORDERED)
+	MessageBus.register_message("game_start", MessageBus.CH_RELIABLE_ORDERED)
 	MessageBus.message.connect(_on_message_received)
 	
 	# Configure NetCore to use ENet
@@ -65,6 +68,18 @@ func _on_join_pressed():
 
 func _on_disconnect_pressed():
 	NetCore.disconnect_from_host()
+	
+func _on_start_pressed():
+	print("Starting game...")
+	print("Current peer ID: ", get_tree().get_multiplayer().get_unique_id())
+	print("Is server: ", get_tree().get_multiplayer().is_server())
+	print("Connected peers: ", connected_peers)
+	
+	MessageBus.send("game_start", {"starting": true})
+	print("Message sent via MessageBus")
+	
+	await get_tree().create_timer(1.0).timeout
+	get_tree().change_scene_to_file("res://addons/gnet/examples/CapsuleRoom/Game.tscn")
 
 # -----------------------------------------------------------------------------
 # end Button Presses
@@ -109,11 +124,19 @@ func _on_gnet_error(code: String, details: String):
 	join_button.disabled = false
 
 func _on_message_received(type: String, from_peer: int, payload: Dictionary):
+	print("Received message type: ", type, " from peer: ", from_peer)
 	match type:
 		"player_info":
 			_update_status("Received player info from peer %d: %s" % [from_peer, payload.name])
 		"chat":
 			_update_status("Chat from %d: %s" % [from_peer, payload.text])
+		"game_start":
+			print("Client: Received game_start message!")
+			if not get_tree().get_multiplayer().is_server():
+				_update_status("Host is starting the game...")
+				await get_tree().create_timer(0.5).timeout
+				print("Client: Changing scene...")
+				get_tree().change_scene_to_file("res://addons/gnet/examples/CapsuleRoom/Game.tscn")
 
 func _update_status(text: String):
 	status_label.text = text
