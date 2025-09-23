@@ -16,10 +16,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-NetCore="*res://addons/gnet/autoload/NetCore.gd"
-ServerRuntime="*res://addons/gnet/autoload/ServerRuntime.gd"
-ClientRuntime="*res://addons/gnet/autoload/ClientRuntime.gd"
-MessageBus="*res://addons/gnet/autoload/MessageBus.gd"
+GNet="*res://addons/gnet/autoload/gnet.gd"
 
 [editor_plugins]
 
