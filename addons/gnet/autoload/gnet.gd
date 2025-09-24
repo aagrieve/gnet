@@ -12,6 +12,7 @@ signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
 signal connection_failed(reason: String)
 signal connection_succeeded()
+signal players_changed(connected_players: Array[int])
 
 enum Adapter { STEAM, ENET }
 
@@ -22,11 +23,17 @@ var is_hosting: bool = false
 # Steam-specific
 var steam_lobby_id: int = 0
 var steam_available: bool = false
+var steam_initialized: bool = false
+
+# Connected players tracking
+var connected_players: Array[int] = []
 
 func _ready():
-	# Check Steam availability
+	# Check Steam availability and initialize
 	steam_available = Engine.has_singleton("Steam") and ClassDB.class_exists("SteamMultiplayerPeer")
-	if not steam_available:
+	if steam_available:
+		_initialize_steam()
+	else:
 		print("GNet: Steam not available, defaulting to ENet")
 		current_adapter = Adapter.ENET
 	
@@ -35,6 +42,13 @@ func _ready():
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.connected_to_server.connect(_on_connection_succeeded)
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
+
+func _process(delta):
+	if current_adapter == Adapter.STEAM:
+		var steam = Engine.get_singleton("Steam")
+		if steam:
+			steam.run_callbacks()
 
 ## PUBLIC API ##
 
@@ -60,6 +74,7 @@ func host_game(options: Dictionary = {}) -> bool:
 	- port: int (ENet only, default 7777)
 	- lobby_type: String (Steam only: "public", "friends", "private")
 	"""
+	print('GNet: Hosting game')
 	var max_players = options.get("max_players", 4)
 	
 	match current_adapter:
@@ -99,63 +114,152 @@ func disconnect_game():
 		multiplayer_peer = null
 	is_hosting = false
 	steam_lobby_id = 0
+	
+	# Clear players list
+	connected_players.clear()
+	players_changed.emit(connected_players)
 
 func get_lobby_id() -> int:
 	"""Get current Steam lobby ID (0 if not Steam or not in lobby)."""
 	return steam_lobby_id
 
-## STEAM IMPLEMENTATION ##
+func get_connected_players() -> Array[int]:
+	"""Get array of all connected player IDs."""
+	return connected_players.duplicate()
+
+func get_player_count() -> int:
+	"""Get number of connected players."""
+	return connected_players.size()
+
+func is_player_connected(peer_id: int) -> bool:
+	"""Check if a specific player is connected."""
+	return connected_players.has(peer_id)
+
+## STEAM ##
+## ------------------------------------------------------------------------ ##
+
+func _initialize_steam():
+	"""Initialize Steam API."""
+	var steam = Engine.get_singleton("Steam")
+	if not steam:
+		print("GNet: Steam singleton not found")
+		steam_available = false
+		current_adapter = Adapter.ENET
+		return
+	
+	# Initialize Steam
+	var init_result = steam.steamInit()
+	if not init_result:
+		print("GNet: Steam initialization failed")
+		steam_available = false
+		steam_initialized = false
+		current_adapter = Adapter.ENET
+		connection_failed.emit("initial_connect_failed")
+		return
+	
+	steam_initialized = true
+	print("GNet: Steam initialized successfully")
+	print("GNet: Steam User ID: ", steam.getSteamID())
 
 func _host_steam(max_players: int, options: Dictionary) -> bool:
-	if not steam_available:
-		connection_failed.emit("Steam not available")
+	print('GNet: Hosting Steam game')
+	if not steam_available or not steam_initialized:
+		connection_failed.emit("initial_connect_failed")
 		return false
 	
-	multiplayer_peer = SteamMultiplayerPeer.new()
+	var steam = Engine.get_singleton("Steam")
 	
-	# Connect to lobby creation signal
-	multiplayer_peer.lobby_created.connect(_on_steam_lobby_created)
+	# Connect to Steam.lobby_created signal
+	steam.lobby_created.connect(_on_steam_lobby_created)
 	
-	# Determine lobby type
-	var lobby_type = SteamMultiplayerPeer.LOBBY_TYPE_FRIENDS_ONLY
+	# Determine lobby type using Steam constants
+	var lobby_type = Steam.LOBBY_TYPE_FRIENDS_ONLY
 	match options.get("lobby_type", "friends"):
-		"public": lobby_type = SteamMultiplayerPeer.LOBBY_TYPE_PUBLIC
-		"private": lobby_type = SteamMultiplayerPeer.LOBBY_TYPE_PRIVATE
-		"friends": lobby_type = SteamMultiplayerPeer.LOBBY_TYPE_FRIENDS_ONLY
+		"public": lobby_type = Steam.LOBBY_TYPE_PUBLIC
+		"private": lobby_type = Steam.LOBBY_TYPE_PRIVATE
+		"friends": lobby_type = Steam.LOBBY_TYPE_FRIENDS_ONLY
 	
-	var result = multiplayer_peer.create_lobby(lobby_type, max_players)
-	if result != OK:
-		connection_failed.emit("Failed to create Steam lobby: " + str(result))
-		return false
+	# Use Steam singleton to create lobby (async call - result comes via callback)
+	print('GNet: Creating Steam lobby with type: ', lobby_type, ' and max_players: ', max_players)
+	steam.createLobby(lobby_type, max_players)
+	print('GNet: createLobby call initiated (async)')
 	
-	multiplayer.multiplayer_peer = multiplayer_peer
+	# createLobby is async - we'll get the result in _on_steam_lobby_created callback
 	is_hosting = true
-	return true
+	return true  # Just indicates the request was initiated successfully
 
 func _join_steam(lobby_id: int) -> bool:
-	if not steam_available:
-		connection_failed.emit("Steam not available")
+	if not steam_available or not steam_initialized:
+		connection_failed.emit("initial_connect_failed")
 		return false
 	
-	multiplayer_peer = SteamMultiplayerPeer.new()
+	var steam = Engine.get_singleton("Steam")
 	
-	var result = multiplayer_peer.connect_lobby(lobby_id)
-	if result != OK:
-		connection_failed.emit("Failed to connect to Steam lobby: " + str(result))
-		return false
+	# Connect to Steam.lobby_joined signal for join result
+	steam.lobby_joined.connect(_on_steam_lobby_joined)
 	
-	multiplayer.multiplayer_peer = multiplayer_peer
-	return true
+	# Use Steam singleton to join lobby (async call)
+	print('GNet: Joining Steam lobby: ', lobby_id)
+	steam.joinLobby(lobby_id)
+	print('GNet: joinLobby call initiated (async)')
+	
+	return true  # Just indicates the request was initiated
 
 func _on_steam_lobby_created(result: int, lobby_id: int):
+	print('_on_steam_lobby_created')
+	print('result: ', result)
+	print('lobby_id: ', lobby_id)
+	
 	if result == 1:  # Steam.RESULT_OK
 		steam_lobby_id = lobby_id
 		print("GNet: Steam lobby created with ID: ", lobby_id)
-		connection_succeeded.emit()
+		
+		# Now create and connect the SteamMultiplayerPeer to the lobby
+		multiplayer_peer = SteamMultiplayerPeer.new()
+		var connect_result = multiplayer_peer.connect_lobby(lobby_id)
+		print('GNet: SteamMultiplayerPeer.connect_lobby returned: ', connect_result)
+		
+		if connect_result == OK:
+			multiplayer.multiplayer_peer = multiplayer_peer
+			
+			# Add host to connected players for Steam (like ENet does)
+			var host_id = 1  # Host always has ID 1
+			if not connected_players.has(host_id):
+				connected_players.append(host_id)
+				players_changed.emit(connected_players)
+			
+			connection_succeeded.emit()
+		else:
+			connection_failed.emit("Failed to connect SteamMultiplayerPeer to lobby: " + str(connect_result))
 	else:
 		connection_failed.emit("Steam lobby creation failed: " + str(result))
 
-## ENET IMPLEMENTATION ##
+func _on_steam_lobby_joined(lobby_id: int, permissions: int, locked: bool, response: int):
+	print('_on_steam_lobby_joined')
+	print('lobby_id: ', lobby_id, ' response: ', response)
+	
+	if response == 1:  # Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS
+		steam_lobby_id = lobby_id
+		print("GNet: Successfully joined Steam lobby: ", lobby_id)
+		
+		# Now create SteamMultiplayerPeer and connect to the lobby
+		multiplayer_peer = SteamMultiplayerPeer.new()
+		var connect_result = multiplayer_peer.connect_lobby(lobby_id)
+		
+		if connect_result == OK:
+			multiplayer.multiplayer_peer = multiplayer_peer
+			print("GNet: SteamMultiplayerPeer connected to lobby")
+			# Note: connection_succeeded will be called via multiplayer.connected_to_server signal
+		else:
+			connection_failed.emit("Failed to connect SteamMultiplayerPeer to lobby: " + str(connect_result))
+	else:
+		connection_failed.emit("Failed to join Steam lobby: " + str(response))
+
+## ------------------------------------------------------------------------ ##
+## end STEAM ##
+
+## ENET ##
+## ------------------------------------------------------------------------ ##
 
 func _host_enet(port: int, max_players: int) -> bool:
 	multiplayer_peer = ENetMultiplayerPeer.new()
@@ -168,6 +272,13 @@ func _host_enet(port: int, max_players: int) -> bool:
 	multiplayer.multiplayer_peer = multiplayer_peer
 	is_hosting = true
 	print("GNet: ENet server started on port ", port)
+	
+	# Add host to connected players immediately
+	var host_id = 1  # Host always has ID 1
+	if not connected_players.has(host_id):
+		connected_players.append(host_id)
+		players_changed.emit(connected_players)
+	
 	connection_succeeded.emit()
 	return true
 
@@ -198,26 +309,61 @@ func _join_enet(target) -> bool:
 	print("GNet: Connecting to ", address, ":", port)
 	return true
 
+## ------------------------------------------------------------------------ ##
+## end ENET ##
+
 ## SIGNAL HANDLERS ##
+## ------------------------------------------------------------------------ ##
 
 func _on_peer_connected(peer_id: int):
 	print("GNet: Peer connected: ", peer_id)
+	
+	if not connected_players.has(peer_id):
+		connected_players.append(peer_id)
+		players_changed.emit(connected_players)
+	
 	peer_connected.emit(peer_id)
 
 func _on_peer_disconnected(peer_id: int):
 	print("GNet: Peer disconnected: ", peer_id)
+	
+	connected_players.erase(peer_id)
+	players_changed.emit(connected_players)
+	
 	peer_disconnected.emit(peer_id)
 
 func _on_connection_failed():
 	print("GNet: Connection failed")
+	# Clear players on failed connection
+	connected_players.clear()
+	players_changed.emit(connected_players)
 	connection_failed.emit("Connection failed")
 
 func _on_connection_succeeded():
 	print("GNet: Connected successfully")
-	connection_succeeded.emit()
+	var my_id = multiplayer.get_unique_id()
+	print("GNet: My ID is: ", my_id)
+	print("GNet: Is hosting: ", is_hosting)
+	
+	if not connected_players.has(my_id):
+		connected_players.append(my_id)
+		print("GNet: Added myself to connected_players: ", connected_players)
+	
+	players_changed.emit(connected_players)
+	print("GNet: Emitted players_changed with: ", connected_players)
+
+func _on_server_disconnected():
+	"""Called when clients lose connection to the host/server."""
+	print("GNet: Server disconnected")
+	
+	# Clear all players since server is gone
+	connected_players.clear()
+	players_changed.emit(connected_players)
+	
+	# Emit connection failed to notify UI
+	connection_failed.emit("Server disconnected")
 
 ## STEAM DISCONNECT ##
-
 func _disconnect_steam():
 	"""Steam-specific disconnect with lobby cleanup."""
 	if not multiplayer_peer:
@@ -233,7 +379,6 @@ func _disconnect_steam():
 	multiplayer_peer.close()
 
 ## ENET DISCONNECT ##
-
 func _disconnect_enet():
 	"""ENet-specific disconnect with proper peer cleanup."""
 	if not multiplayer_peer:
@@ -248,3 +393,14 @@ func _disconnect_enet():
 	
 	# Close the multiplayer peer connection
 	multiplayer_peer.close()
+
+## ------------------------------------------------------------------------ ##
+## end SIGNAL HANDLERS ##
+
+func _exit_tree():
+	"""Clean up Steam on exit."""
+	if steam_initialized:
+		var steam = Engine.get_singleton("Steam")
+		if steam:
+			steam.steamShutdown()
+		steam_initialized = false

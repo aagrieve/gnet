@@ -1,13 +1,6 @@
-res://addons/gnet/examples/CapsuleRoom/Main.tscn
-res://addons/gnet/examples/Test/test.tscn
-res://addons/gnet/examples/SteamP2P/SteamLobbyMain.tscn
-res://addons/gnet/examples/CapsuleRoom/Game.tscn
-res://addons/gnet/examples/CapsuleRoom/player.tscn
-res://addons/gnet/examples/CapsuleRoom/GameManager.tscn
-res://addons/gnet/examples/EnetP2P/LobbyMain.tscn
-res://addons/gnet/plugin.gd
 res://addons/gnet/examples/SimpleP2P/simple_p2p.tscn
-res://addons/gnet/examples/SimpleP2P/simpleP2P.gd
-res://addons/gnet/autoload/gnet.gd
 res://addons/gnet/examples/SimpleP2P/player_list.tscn
+res://addons/gnet/autoload/gnet.gd
 res://addons/gnet/examples/SimpleP2P/player_list.gd
+res://addons/gnet/examples/SimpleP2P/simpleP2P.gd
+res://addons/gnet/autoload/gNet.gd

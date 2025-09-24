@@ -26,15 +26,13 @@ Simple P2P example with separate Steam and ENet tabs.
 # PlayerList
 @onready var player_list = $VBoxContainer/PlayerListContainer/PlayerList
 
-# Connected Players List
-var connected_players: Array[int] = []
-
 func _ready():
 	# Connect GNet signals
 	GNet.peer_connected.connect(_on_peer_connected)
 	GNet.peer_disconnected.connect(_on_peer_disconnected)
 	GNet.connection_succeeded.connect(_on_connection_succeeded)
 	GNet.connection_failed.connect(_on_connection_failed)
+	GNet.players_changed.connect(_on_players_changed)
 	
 	# Connect Steam tab UI
 	steam_host_button.pressed.connect(_on_steam_host_pressed)
@@ -49,7 +47,7 @@ func _ready():
 	enet_port_input.value = 7777
 	enet_port_input.min_value = 1024
 	enet_port_input.max_value = 65535
-	enet_address_input.placeholder_text = "127.0.0.1:7777"
+	enet_address_input.placeholder_text = "127.0.0.1"
 	
 	# Connect chat
 	chat_input.text_submitted.connect(_on_chat_submitted)
@@ -75,6 +73,8 @@ func _on_steam_host_pressed():
 	if not success:
 		steam_status_label.text = "Failed to create Steam lobby"
 		_enable_all_buttons()
+	else:
+		steam_status_label.text = "Steam lobby created"
 
 func _on_steam_join_pressed():
 	var lobby_id_text = steam_lobby_input.text.strip_edges()
@@ -162,32 +162,23 @@ func _on_connection_succeeded():
 	_update_status("Connected!" + lobby_info)
 	_add_chat_message("[color=green]Connected to game![/color]")
 
-	var my_id = multiplayer.get_unique_id()
-	if not connected_players.has(my_id):
-		connected_players.append(my_id)
-		player_list.add_player(my_id)
-	
-	# If hosting, add host ID
-	if GNet.is_hosting and not connected_players.has(1):
-		connected_players.append(1)
-		player_list.add_player(1)
-
 func _on_connection_failed(reason: String):
-	_update_status("Failed: " + reason)
+	match reason:
+		"initial_connect_failed":
+			_update_status("Failed to connect")
+		"server_disconnected":
+			_update_status("Server disconnected")  
+		"user_disconnected":
+			_update_status("Disconnected")
+		_:
+			_update_status("Failed: " + reason)
 	_enable_all_buttons()
 
 func _on_peer_connected(peer_id: int):
 	_add_chat_message("[color=cyan]Player " + str(peer_id) + " joined[/color]")
 
-	if not connected_players.has(peer_id):
-		connected_players.append(peer_id)
-		player_list.add_player(peer_id)
-
 func _on_peer_disconnected(peer_id: int):
 	_add_chat_message("[color=orange]Player " + str(peer_id) + " left[/color]")
-
-	connected_players.erase(peer_id)
-	player_list.remove_player(peer_id)
 
 ## CHAT FUNCTIONS ##
 
@@ -225,11 +216,12 @@ func _on_steam_disconnect_pressed():
 	_enable_all_buttons()
 	_add_chat_message("[color=red]Disconnected from game[/color]")
 
-	connected_players.clear()
-	player_list.clear_players()
-
 func _on_enet_disconnect_pressed():
 	GNet.disconnect_game()
 	enet_status_label.text = "Disconnected"
 	_enable_all_buttons()
 	_add_chat_message("[color=red]Disconnected from game[/color]")
+
+func _on_players_changed(players: Array[int]):
+	"""Update UI when player list changes from GNet."""
+	player_list.set_players(players)

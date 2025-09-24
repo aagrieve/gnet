@@ -4,38 +4,27 @@ class_name PlayerList
 @onready var players_container = $VBox/PlayersContainer
 @onready var title_label = $VBox/TitleLabel
 
-var connected_players: Array[int] = []
-
 func _ready():
 	title_label.text = "Connected Players:"
-	update_display()
+	set_players([])  # Start with empty list
 
-func add_player(player_id: int):
-	if not connected_players.has(player_id):
-		connected_players.append(player_id)
-		update_display()
+func set_players(player_ids: Array[int]):
+	"""Main method to update the player list display."""
+	update_display(player_ids)
 
-func remove_player(player_id: int):
-	connected_players.erase(player_id)
-	update_display()
-
-func clear_players():
-	connected_players.clear()
-	update_display()
-
-func update_display():
+func update_display(player_ids: Array[int]):
 	# Clear existing labels
 	for child in players_container.get_children():
 		child.queue_free()
 	
-	if connected_players.is_empty():
+	if player_ids.is_empty():
 		var label = Label.new()
 		label.text = "No players connected"
 		players_container.add_child(label)
 		return
 	
 	# Sort with host first
-	var sorted_players = connected_players.duplicate()
+	var sorted_players = player_ids.duplicate()
 	sorted_players.sort()
 	
 	for player_id in sorted_players:
@@ -52,3 +41,6 @@ func update_display():
 		
 		label.text = display_text
 		players_container.add_child(label)
+
+func clear_players():
+	set_players([])
