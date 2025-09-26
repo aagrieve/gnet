@@ -1,6 +1,0 @@
-res://addons/gnet/examples/SimpleP2P/simple_p2p.tscn
-res://addons/gnet/examples/SimpleP2P/player_list.tscn
-res://addons/gnet/autoload/gnet.gd
-res://addons/gnet/examples/SimpleP2P/player_list.gd
-res://addons/gnet/examples/SimpleP2P/simpleP2P.gd
-res://addons/gnet/autoload/gNet.gd
