@@ -160,6 +160,9 @@ func _initialize_steam():
 	print("GNet: Steam initialized successfully")
 	print("GNet: Steam User ID: ", steam.getSteamID())
 
+	steam.lobby_created.connect(_on_steam_lobby_created)
+	steam.lobby_joined.connect(_on_steam_lobby_joined)
+
 ### HOST STEAM ###
 ### ------------------------------------------------------------------------ ###
 
@@ -174,9 +177,6 @@ func _host_steam(max_players: int, options: Dictionary) -> bool:
 	if not steam_available or not steam_initialized:
 		connection_failed.emit("initial_connect_failed")
 		return false
-	
-	# Connect to Steam.lobby_created signal
-	steam.lobby_created.connect(_on_steam_lobby_created)
 	
 	# Determine lobby type using Steam constants
 	var lobby_type = Steam.LOBBY_TYPE_FRIENDS_ONLY
@@ -227,9 +227,6 @@ func _join_steam(lobby_id: int) -> bool:
 	if not steam_available or not steam_initialized:
 		connection_failed.emit("initial_connect_failed")
 		return false
-	
-	# Connect to Steam.lobby_joined signal for join result
-	steam.lobby_joined.connect(_on_steam_lobby_joined)
 	
 	# Use Steam singleton to join lobby (async call)
 	print('GNet: Joining Steam lobby: ', lobby_id)
