@@ -28,7 +28,7 @@ Simple P2P example with separate Steam and ENet tabs.
 @onready var player_list = $VBoxContainer/PlayerListContainer/PlayerList
 
 # LobbyListContainer
-@onready var lobby_list_container: VBoxContainer = $VBoxContainer2/LobbyListContainer
+@onready var lobby_list_container = $VBoxContainer2/LobbyListContainer
 var lobby_list_item_scene = preload("res://addons/gnet/examples/SimpleP2P/lobby_list_item.gd")
 
 func _ready():
@@ -65,7 +65,7 @@ func _ready():
 		chat_log.bbcode_enabled = true
 		chat_log.scroll_following = true
 
-	_on_refresh_pressed()
+	_on_steam_refresh_pressed()
 
 ## STEAM TAB FUNCTIONS ##
 
@@ -105,8 +105,8 @@ func _on_steam_join_pressed():
 		_enable_all_buttons()
 
 func _on_steam_refresh_pressed():
-	refresh_button.disabled = true
-	refresh_button.text = "Searching..."
+	steam_refresh_button.disabled = true
+	steam_refresh_button.text = "Searching..."
 	GNet.find_friends_lobbies()
 
 ## ENET TAB FUNCTIONS ##

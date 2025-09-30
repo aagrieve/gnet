@@ -1,0 +1,158 @@
+[gd_scene load_steps=3 format=3 uid="uid://cln0nlegakysk"]
+
+[ext_resource type="Script" uid="uid://dhksd3mlms34o" path="res://addons/gnet/examples/SimpleP2P/simpleP2P.gd" id="1_utyhi"]
+[ext_resource type="PackedScene" uid="uid://dx12e1aq1oxmq" path="res://addons/gnet/examples/SimpleP2P/player_list.tscn" id="2_qbdjv"]
+
+[node name="SimpleP2P" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_utyhi")
+
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 2
+offset_left = 2.0
+offset_top = 1.0
+offset_right = 1154.0
+offset_bottom = 32.0
+current_tab = 0
+
+[node name="Steam" type="Control" parent="TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="VBox" type="VBoxContainer" parent="TabContainer/Steam"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatusLabel" type="Label" parent="TabContainer/Steam/VBox"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="TabContainer/Steam/VBox"]
+layout_mode = 2
+
+[node name="HostButton" type="Button" parent="TabContainer/Steam/VBox/HBox"]
+layout_mode = 2
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="TabContainer/Steam/VBox/HBox"]
+layout_mode = 2
+text = "Join"
+
+[node name="DisconnectButton" type="Button" parent="TabContainer/Steam/VBox/HBox"]
+layout_mode = 2
+text = "Disconnect"
+
+[node name="RefreshLobbiesButton" type="Button" parent="TabContainer/Steam/VBox/HBox"]
+layout_mode = 2
+text = "Refresh"
+
+[node name="LobbyInput" type="LineEdit" parent="TabContainer/Steam/VBox"]
+layout_mode = 2
+placeholder_text = "Lobby Input"
+
+[node name="ENet" type="Control" parent="TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="VBox" type="VBoxContainer" parent="TabContainer/ENet"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -754.0
+offset_bottom = 200.0
+
+[node name="StatusLabel" type="Label" parent="TabContainer/ENet/VBox"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="TabContainer/ENet/VBox"]
+layout_mode = 2
+
+[node name="HostButton" type="Button" parent="TabContainer/ENet/VBox/HBox"]
+layout_mode = 2
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="TabContainer/ENet/VBox/HBox"]
+layout_mode = 2
+text = "Join"
+
+[node name="DisconnectButton" type="Button" parent="TabContainer/ENet/VBox/HBox"]
+layout_mode = 2
+text = "Disconnect"
+
+[node name="LobbyInput" type="LineEdit" parent="TabContainer/ENet/VBox"]
+layout_mode = 2
+placeholder_text = "Lobby Input"
+
+[node name="AddressInput" type="LineEdit" parent="TabContainer/ENet/VBox"]
+layout_mode = 2
+
+[node name="PortInput" type="SpinBox" parent="TabContainer/ENet/VBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+offset_left = 3.0
+offset_top = 206.0
+offset_right = 7.0
+offset_bottom = 206.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBox"]
+custom_minimum_size = Vector2(400, 250)
+layout_mode = 2
+
+[node name="ChatContainer" type="VBoxContainer" parent="VBox/HBoxContainer"]
+layout_mode = 2
+
+[node name="Chat" type="Control" parent="VBox/HBoxContainer/ChatContainer"]
+layout_mode = 2
+
+[node name="ChatLog" type="RichTextLabel" parent="VBox/HBoxContainer/ChatContainer/Chat"]
+layout_mode = 2
+offset_left = 3.0
+offset_top = -4.0
+offset_right = 369.0
+offset_bottom = 185.0
+
+[node name="ChatInput" type="LineEdit" parent="VBox/HBoxContainer/ChatContainer/Chat"]
+layout_mode = 2
+offset_left = 3.0
+offset_top = 189.0
+offset_right = 369.0
+offset_bottom = 220.0
+placeholder_text = "Chat Input"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 383.0
+offset_top = 223.0
+offset_right = 783.0
+offset_bottom = 423.0
+
+[node name="PlayerListContainer" type="VBoxContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(400, 200)
+layout_mode = 2
+
+[node name="PlayerList" parent="VBoxContainer/PlayerListContainer" instance=ExtResource("2_qbdjv")]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 881.0
+offset_top = 144.0
+offset_right = 1098.0
+offset_bottom = 440.0
+
+[node name="LobbyListContainer" type="HBoxContainer" parent="VBoxContainer2"]
+layout_mode = 2
