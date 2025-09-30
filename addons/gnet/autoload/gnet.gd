@@ -21,6 +21,7 @@ var multiplayer_peer: MultiplayerPeer
 var is_hosting: bool = false
 
 # Steam-specific
+var steam
 var steam_lobby_id: int = 0
 var steam_available: bool = false
 var steam_initialized: bool = false
@@ -32,6 +33,7 @@ func _ready():
 	# Check Steam availability and initialize
 	steam_available = Engine.has_singleton("Steam") and ClassDB.class_exists("SteamMultiplayerPeer")
 	if steam_available:
+		steam = Engine.get_singleton("Steam")
 		_initialize_steam()
 	else:
 		print("GNet: Steam not available, defaulting to ENet")
@@ -45,10 +47,8 @@ func _ready():
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
 func _process(delta):
-	if current_adapter == Adapter.STEAM:
-		var steam = Engine.get_singleton("Steam")
-		if steam:
-			steam.run_callbacks()
+	if current_adapter == Adapter.STEAM and steam:
+		steam.run_callbacks()
 
 ## PUBLIC API ##
 
@@ -140,7 +140,6 @@ func is_player_connected(peer_id: int) -> bool:
 
 func _initialize_steam():
 	"""Initialize Steam API."""
-	var steam = Engine.get_singleton("Steam")
 	if not steam:
 		print("GNet: Steam singleton not found")
 		steam_available = false
@@ -175,8 +174,6 @@ func _host_steam(max_players: int, options: Dictionary) -> bool:
 	if not steam_available or not steam_initialized:
 		connection_failed.emit("initial_connect_failed")
 		return false
-	
-	var steam = Engine.get_singleton("Steam")
 	
 	# Connect to Steam.lobby_created signal
 	steam.lobby_created.connect(_on_steam_lobby_created)
@@ -231,8 +228,6 @@ func _join_steam(lobby_id: int) -> bool:
 		connection_failed.emit("initial_connect_failed")
 		return false
 	
-	var steam = Engine.get_singleton("Steam")
-	
 	# Connect to Steam.lobby_joined signal for join result
 	steam.lobby_joined.connect(_on_steam_lobby_joined)
 	
@@ -251,16 +246,10 @@ func _on_steam_lobby_joined(lobby_id: int, permissions: int, locked: bool, respo
 		steam_lobby_id = lobby_id
 		print("GNet: Successfully joined Steam lobby: ", lobby_id)
 		
-		# Now create SteamMultiplayerPeer and connect to the lobby
-		multiplayer_peer = SteamMultiplayerPeer.new()
-		var connect_result = multiplayer_peer.connect_lobby(lobby_id)
-		
-		if connect_result == OK:
-			multiplayer.multiplayer_peer = multiplayer_peer
-			print("GNet: SteamMultiplayerPeer connected to lobby")
-			# Note: connection_succeeded will be called via multiplayer.connected_to_server signal
-		else:
-			connection_failed.emit("Failed to connect SteamMultiplayerPeer to lobby: " + str(connect_result))
+		var lobby_owner_steam_id = steam.getLobbyOwner(lobby_id)
+		connect_socket(lobby_owner_steam_id)
+
+		print("GNet: Attempting P2P connection to lobby owner")
 	else:
 		connection_failed.emit("Failed to join Steam lobby: " + str(response))
 
@@ -383,7 +372,6 @@ func _disconnect_steam():
 	
 	if is_hosting and steam_lobby_id > 0:
 		if steam_available:
-			var steam = Engine.get_singleton("Steam")
 			steam.leaveLobby(steam_lobby_id)
 		print("GNet: Steam lobby closed: ", steam_lobby_id)
 	
@@ -412,7 +400,6 @@ func _disconnect_enet():
 func _exit_tree():
 	"""Clean up Steam on exit."""
 	if steam_initialized:
-		var steam = Engine.get_singleton("Steam")
 		if steam:
 			steam.steamShutdown()
 		steam_initialized = false
