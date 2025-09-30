@@ -142,44 +142,40 @@ func find_friends_lobbies():
 		friends_lobbies_found.emit([])
 		return
 	
-	# Connect to the lobby list result signal if not already connected
-	if not steam.lobby_match_list.is_connected(_on_lobby_match_list):
-		steam.lobby_match_list.connect(_on_lobby_match_list)
-	
-	# Set up filters for friends lobbies
-	steam.addRequestLobbyListDistanceFilter(Steam.LOBBY_DISTANCE_FILTER_WORLDWIDE)
-	steam.addRequestLobbyListResultCountFilter(50)
-	
-	# Request lobby list
-	steam.requestLobbyList()
-	print("GNet: Searching for friends' lobbies...")
-
-func _on_lobby_match_list(lobbies: Array):
-	"""Handle lobby search results and filter for friends only."""
-	print("GNet: Found ", lobbies.size(), " total lobbies")
-	
+	print("GNet: Checking friends' game status...")
 	var friends_lobbies: Array[Dictionary] = []
-	var friend_ids = steam.getFriendCount(Steam.FRIEND_FLAG_IMMEDIATE)
+	var friend_count = steam.getFriendCount(Steam.FRIEND_FLAG_IMMEDIATE)
+	var my_app_id = steam.getAppID()
 	
-	# Get list of friend Steam IDs
-	var friends_steam_ids: Array[int] = []
-	for i in range(friend_ids):
+	# Check each friend directly
+	for i in range(friend_count):
 		var friend_steam_id = steam.getFriendByIndex(i, Steam.FRIEND_FLAG_IMMEDIATE)
-		friends_steam_ids.append(friend_steam_id)
-	
-	# Filter lobbies to only include those owned by friends
-	for lobby_id in lobbies:
-		var owner_steam_id = steam.getLobbyOwner(lobby_id)
-		if owner_steam_id in friends_steam_ids:
-			var lobby_data = {
-				"lobby_id": lobby_id,
-				"owner_steam_id": owner_steam_id,
-				"owner_name": steam.getFriendPersonaName(owner_steam_id),
-				"member_count": steam.getNumLobbyMembers(lobby_id),
-				"max_members": steam.getLobbyMemberLimit(lobby_id),
-				"game_name": steam.getLobbyData(lobby_id, "game_name") # Optional: set this when creating lobby
-			}
-			friends_lobbies.append(lobby_data)
+		var game_info = steam.getFriendGamePlayed(friend_steam_id)
+		
+		# Skip if friend is not playing any game
+		if game_info.is_empty():
+			continue
+			
+		# Skip if friend is playing a different game
+		if game_info.get("id", 0) != my_app_id:
+			continue
+			
+		# Check if friend is in a lobby
+		var lobby_id = game_info.get("lobby", 0)
+		if lobby_id == 0:
+			continue  # Friend is playing our game but not in a lobby
+		
+		# Friend is in a lobby for our game!
+		var friend_name = steam.getFriendPersonaName(friend_steam_id)
+		var lobby_data = {
+			"lobby_id": lobby_id,
+			"owner_steam_id": friend_steam_id,
+			"owner_name": friend_name,
+			"member_count": steam.getNumLobbyMembers(lobby_id),
+			"max_members": steam.getLobbyMemberLimit(lobby_id),
+			"game_name": steam.getLobbyData(lobby_id, "game_name")
+		}
+		friends_lobbies.append(lobby_data)
 	
 	print("GNet: Found ", friends_lobbies.size(), " friends' lobbies")
 	friends_lobbies_found.emit(friends_lobbies)
@@ -211,7 +207,6 @@ func _initialize_steam():
 
 	steam.lobby_created.connect(_on_steam_lobby_created)
 	steam.lobby_joined.connect(_on_steam_lobby_joined)
-	steam.lobby_match_list.connect(_on_lobby_match_list)
 
 ### HOST STEAM ###
 ### ------------------------------------------------------------------------ ###

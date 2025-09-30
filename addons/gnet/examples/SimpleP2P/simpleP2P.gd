@@ -252,5 +252,8 @@ func _on_friends_lobbies_found(lobbies: Array[Dictionary]):
 		lobby_item.join_requested.connect(_on_lobby_join_requested)
 		lobby_list_container.add_child(lobby_item)
 
+	steam_refresh_button.disabled = false
+	steam_refresh_button.text = "Refresh"
+
 func _on_lobby_join_requested(lobby_id: int):
 	GNet.join_game(lobby_id)
