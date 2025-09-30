@@ -18,10 +18,9 @@ offset_left = 2.0
 offset_top = 1.0
 offset_right = 1154.0
 offset_bottom = 32.0
-current_tab = 1
+current_tab = 0
 
 [node name="Steam" type="Control" parent="TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -53,11 +52,16 @@ text = "Join"
 layout_mode = 2
 text = "Disconnect"
 
+[node name="RefreshLobbiesButton" type="Button" parent="TabContainer/Steam/VBox/HBox"]
+layout_mode = 2
+text = "Refresh"
+
 [node name="LobbyInput" type="LineEdit" parent="TabContainer/Steam/VBox"]
 layout_mode = 2
 placeholder_text = "Lobby Input"
 
 [node name="ENet" type="Control" parent="TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -141,4 +145,14 @@ custom_minimum_size = Vector2(400, 200)
 layout_mode = 2
 
 [node name="PlayerList" parent="VBoxContainer/PlayerListContainer" instance=ExtResource("2_qbdjv")]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 881.0
+offset_top = 144.0
+offset_right = 1098.0
+offset_bottom = 440.0
+
+[node name="LobbyListContainer" type="HBoxContainer" parent="VBoxContainer2"]
 layout_mode = 2

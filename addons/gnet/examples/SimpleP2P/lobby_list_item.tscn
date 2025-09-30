@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://c36c8s3vvo22v"]
+
+[ext_resource type="Script" uid="uid://vm7x466iyyot" path="res://addons/gnet/examples/SimpleP2P/lobby_list_item.gd" id="1_0vtyy"]
+
+[node name="LobbyListItem" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0vtyy")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LobbyInfo" type="VBoxContainer" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="LobbyName" type="Label" parent="HBoxContainer/LobbyInfo"]
+layout_mode = 2
+
+[node name="PlayerCount" type="Label" parent="HBoxContainer/LobbyInfo"]
+layout_mode = 2
+
+[node name="JoinButton" type="Button" parent="."]
+layout_mode = 2
+offset_right = 38.0
+offset_bottom = 40.0
+text = "Join"

@@ -13,6 +13,7 @@ signal peer_disconnected(peer_id: int)
 signal connection_failed(reason: String)
 signal connection_succeeded()
 signal players_changed(connected_players: Array[int])
+signal friends_lobbies_found(lobbies: Array[Dictionary])
 
 enum Adapter { STEAM, ENET }
 
@@ -135,6 +136,54 @@ func is_player_connected(peer_id: int) -> bool:
 	"""Check if a specific player is connected."""
 	return connected_players.has(peer_id)
 
+func find_friends_lobbies():
+	"""Find lobbies created by Steam friends. Results come via friends_lobbies_found signal."""
+	if not steam_available or not steam_initialized:
+		friends_lobbies_found.emit([])
+		return
+	
+	# Connect to the lobby list result signal if not already connected
+	if not steam.lobby_match_list.is_connected(_on_lobby_match_list):
+		steam.lobby_match_list.connect(_on_lobby_match_list)
+	
+	# Set up filters for friends lobbies
+	steam.addRequestLobbyListDistanceFilter(Steam.LOBBY_DISTANCE_FILTER_WORLDWIDE)
+	steam.addRequestLobbyListResultCountFilter(50)
+	
+	# Request lobby list
+	steam.requestLobbyList()
+	print("GNet: Searching for friends' lobbies...")
+
+func _on_lobby_match_list(lobbies: Array):
+	"""Handle lobby search results and filter for friends only."""
+	print("GNet: Found ", lobbies.size(), " total lobbies")
+	
+	var friends_lobbies: Array[Dictionary] = []
+	var friend_ids = steam.getFriendCount(Steam.FRIEND_FLAG_IMMEDIATE)
+	
+	# Get list of friend Steam IDs
+	var friends_steam_ids: Array[int] = []
+	for i in range(friend_ids):
+		var friend_steam_id = steam.getFriendByIndex(i, Steam.FRIEND_FLAG_IMMEDIATE)
+		friends_steam_ids.append(friend_steam_id)
+	
+	# Filter lobbies to only include those owned by friends
+	for lobby_id in lobbies:
+		var owner_steam_id = steam.getLobbyOwner(lobby_id)
+		if owner_steam_id in friends_steam_ids:
+			var lobby_data = {
+				"lobby_id": lobby_id,
+				"owner_steam_id": owner_steam_id,
+				"owner_name": steam.getFriendPersonaName(owner_steam_id),
+				"member_count": steam.getNumLobbyMembers(lobby_id),
+				"max_members": steam.getLobbyMemberLimit(lobby_id),
+				"game_name": steam.getLobbyData(lobby_id, "game_name") # Optional: set this when creating lobby
+			}
+			friends_lobbies.append(lobby_data)
+	
+	print("GNet: Found ", friends_lobbies.size(), " friends' lobbies")
+	friends_lobbies_found.emit(friends_lobbies)
+
 ## STEAM ##
 ## ------------------------------------------------------------------------ ##
 
@@ -162,6 +211,7 @@ func _initialize_steam():
 
 	steam.lobby_created.connect(_on_steam_lobby_created)
 	steam.lobby_joined.connect(_on_steam_lobby_joined)
+	steam.lobby_match_list.connect(_on_lobby_match_list)
 
 ### HOST STEAM ###
 ### ------------------------------------------------------------------------ ###
@@ -242,11 +292,11 @@ func _on_steam_lobby_joined(lobby_id: int, permissions: int, locked: bool, respo
 	if response == 1:  # Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS
 		steam_lobby_id = lobby_id
 		print("GNet: Successfully joined Steam lobby: ", lobby_id)
-		
-		var lobby_owner_steam_id = steam.getLobbyOwner(lobby_id)
-		connect_socket(lobby_owner_steam_id)
 
-		print("GNet: Attempting P2P connection to lobby owner")
+		if not is_hosting:
+			print("GNet: Attempting P2P connection to lobby owner")
+			var lobby_owner_steam_id = steam.getLobbyOwner(lobby_id)
+			connect_socket(lobby_owner_steam_id)
 	else:
 		connection_failed.emit("Failed to join Steam lobby: " + str(response))
 

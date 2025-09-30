@@ -7,6 +7,7 @@ Simple P2P example with separate Steam and ENet tabs.
 @onready var steam_host_button = $TabContainer/Steam/VBox/HBox/HostButton
 @onready var steam_join_button = $TabContainer/Steam/VBox/HBox/JoinButton
 @onready var steam_disconnect_button = $TabContainer/Steam/VBox/HBox/DisconnectButton
+@onready var steam_refresh_button = $TabContainer/Steam/VBox/HBox/RefreshLobbiesButton
 @onready var steam_lobby_input = $TabContainer/Steam/VBox/LobbyInput
 @onready var steam_status_label = $TabContainer/Steam/VBox/StatusLabel
 
@@ -26,6 +27,10 @@ Simple P2P example with separate Steam and ENet tabs.
 # PlayerList
 @onready var player_list = $VBoxContainer/PlayerListContainer/PlayerList
 
+# LobbyListContainer
+@onready var lobby_list_container: VBoxContainer = $VBoxContainer2/LobbyListContainer
+var lobby_list_item_scene = preload("res://addons/gnet/examples/SimpleP2P/lobby_list_item.gd")
+
 func _ready():
 	# Connect GNet signals
 	GNet.peer_connected.connect(_on_peer_connected)
@@ -33,11 +38,13 @@ func _ready():
 	GNet.connection_succeeded.connect(_on_connection_succeeded)
 	GNet.connection_failed.connect(_on_connection_failed)
 	GNet.players_changed.connect(_on_players_changed)
+	GNet.friends_lobbies_found.connect(_on_friends_lobbies_found)
 	
 	# Connect Steam tab UI
 	steam_host_button.pressed.connect(_on_steam_host_pressed)
 	steam_join_button.pressed.connect(_on_steam_join_pressed)
 	steam_disconnect_button.pressed.connect(_on_steam_disconnect_pressed)
+	steam_refresh_button.pressed.connect(_on_steam_refresh_pressed)
 	steam_lobby_input.placeholder_text = "Enter Steam Lobby ID"
 	
 	# Connect ENet tab UI
@@ -57,6 +64,8 @@ func _ready():
 	if chat_log is RichTextLabel:
 		chat_log.bbcode_enabled = true
 		chat_log.scroll_following = true
+
+	_on_refresh_pressed()
 
 ## STEAM TAB FUNCTIONS ##
 
@@ -94,6 +103,11 @@ func _on_steam_join_pressed():
 	if not success:
 		steam_status_label.text = "Failed to join Steam lobby"
 		_enable_all_buttons()
+
+func _on_steam_refresh_pressed():
+    refresh_button.disabled = true
+    refresh_button.text = "Searching..."
+    GNet.find_friends_lobbies()
 
 ## ENET TAB FUNCTIONS ##
 
@@ -225,3 +239,18 @@ func _on_enet_disconnect_pressed():
 func _on_players_changed(players: Array[int]):
 	"""Update UI when player list changes from GNet."""
 	player_list.set_players(players)
+
+func _on_friends_lobbies_found(lobbies: Array[Dictionary]):
+	# Clear existing items
+	for child in lobby_list_container.get_children():
+		child.queue_free()
+	
+	# Create new items (just like mapping in React!)
+	for lobby in lobbies:
+		var lobby_item = lobby_list_item_scene.instantiate()
+		lobby_item.setup(lobby)
+		lobby_item.join_requested.connect(_on_lobby_join_requested)
+		lobby_list_container.add_child(lobby_item)
+
+func _on_lobby_join_requested(lobby_id: int):
+	GNet.join_game(lobby_id)
