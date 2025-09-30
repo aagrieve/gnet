@@ -248,9 +248,9 @@ func _on_friends_lobbies_found(lobbies: Array[Dictionary]):
 	# Create new items (just like mapping in React!)
 	for lobby in lobbies:
 		var lobby_item = lobby_list_item_scene.instantiate()
+		lobby_list_container.add_child(lobby_item)
 		lobby_item.setup(lobby)
 		lobby_item.join_requested.connect(_on_lobby_join_requested)
-		lobby_list_container.add_child(lobby_item)
 
 	steam_refresh_button.disabled = false
 	steam_refresh_button.text = "Refresh"
