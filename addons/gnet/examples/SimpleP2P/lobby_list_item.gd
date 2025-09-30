@@ -5,7 +5,7 @@ signal join_requested(lobby_id: int)
 
 @onready var lobby_name: Label = $HBoxContainer/LobbyInfo/LobbyName
 @onready var player_count: Label = $HBoxContainer/LobbyInfo/PlayerCount
-@onready var join_button: Button = $HBoxContainer/JoinButton
+@onready var join_button: Button = $JoinButton
 
 var lobby_data: Dictionary
 
