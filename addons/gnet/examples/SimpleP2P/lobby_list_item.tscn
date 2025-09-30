@@ -13,8 +13,8 @@ script = ExtResource("1_0vtyy")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 145.0
+offset_bottom = 50.0
 
 [node name="LobbyInfo" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
@@ -27,6 +27,8 @@ layout_mode = 2
 
 [node name="JoinButton" type="Button" parent="."]
 layout_mode = 2
-offset_right = 38.0
-offset_bottom = 40.0
+offset_left = 198.0
+offset_top = 4.0
+offset_right = 301.0
+offset_bottom = 44.0
 text = "Join"
