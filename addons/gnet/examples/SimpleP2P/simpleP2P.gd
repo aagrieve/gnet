@@ -105,9 +105,9 @@ func _on_steam_join_pressed():
 		_enable_all_buttons()
 
 func _on_steam_refresh_pressed():
-    refresh_button.disabled = true
-    refresh_button.text = "Searching..."
-    GNet.find_friends_lobbies()
+	refresh_button.disabled = true
+	refresh_button.text = "Searching..."
+	GNet.find_friends_lobbies()
 
 ## ENET TAB FUNCTIONS ##
 
