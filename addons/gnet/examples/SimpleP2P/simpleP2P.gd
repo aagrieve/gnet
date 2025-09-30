@@ -29,7 +29,7 @@ Simple P2P example with separate Steam and ENet tabs.
 
 # LobbyListContainer
 @onready var lobby_list_container = $VBoxContainer2/LobbyListContainer
-var lobby_list_item_scene = preload("res://addons/gnet/examples/SimpleP2P/lobby_list_item.gd")
+var lobby_list_item_scene = preload("res://addons/gnet/examples/SimpleP2P/lobby_list_item.tscn")
 
 func _ready():
 	# Connect GNet signals
