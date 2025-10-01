@@ -1,41 +1,34 @@
-# GameManager.gd - Remove lobby creation functions
 extends Node
 
 # Add player spawning system
-var player_scene = preload("res://addons/gnet/examples/CapsuleRoom/Player.tscn")
+var player_scene = preload("res://addons/gnet/examples/CapsuleRoom/player.tscn")
 var players = {}
 
 func _ready():
-	# Connect to gNet signals for game session management
-	NetCore.peer_connected.connect(_on_peer_connected)
-	NetCore.peer_disconnected.connect(_on_peer_disconnected)
-	NetCore.session_ended.connect(_on_session_ended)  # Handle disconnections
-	NetCore.gnet_error.connect(_on_gnet_error)
+	# Connect to GNet signals for game session management
+	GNet.peer_connected.connect(_on_peer_connected)
+	GNet.peer_disconnected.connect(_on_peer_disconnected)
+	GNet.connection_failed.connect(_on_connection_failed)
 	
-	# Set up MessageBus for game actions (not lobby actions)
-	MessageBus.register_message("player_input", MessageBus.CH_UNRELIABLE_SEQUENCED)
-	MessageBus.register_message("player_state", MessageBus.CH_UNRELIABLE_SEQUENCED)
-	MessageBus.register_message("player_spawn", MessageBus.CH_RELIABLE_ORDERED)
-	MessageBus.register_message("player_despawn", MessageBus.CH_RELIABLE_ORDERED)
-	MessageBus.message.connect(_on_message_received)
-	
-	# Session is already established by lobby - just spawn players
+	# Initialize the game with existing multiplayer session
 	_initialize_game_session()
 
 func _initialize_game_session():
 	"""Initialize the game with existing multiplayer session."""
 	print("GameManager: Initializing game session")
 	print("Is server: ", is_server())
-	print("My peer ID: ", get_tree().get_multiplayer().get_unique_id())
+	print("My peer ID: ", multiplayer.get_unique_id())
 	
-	# Spawn our own player
-	spawn_player_for_peer(get_tree().get_multiplayer().get_unique_id())
+	# Wait a frame to ensure scene is fully loaded
+	await get_tree().process_frame
 	
-	# If we're the server, spawn players for already-connected peers
+	# ONLY the server spawns players
 	if is_server():
-		var connected_peers = get_tree().get_multiplayer().get_peers()
-		print("Already connected peers: ", connected_peers)
-		for peer_id in connected_peers:
+		# Use GNet's connected_players which includes everyone (host + clients)
+		var all_players = GNet.get_connected_players()
+		print("All players to spawn: ", all_players)
+		
+		for peer_id in all_players:
 			spawn_player_for_peer(peer_id)
 
 func _on_peer_connected(peer_id: int):
@@ -45,12 +38,9 @@ func _on_peer_connected(peer_id: int):
 	if is_server():
 		spawn_player_for_peer(peer_id)
 		
-		# Tell the new peer about existing players
+		# Tell the new peer about existing players via RPC
 		for existing_player_id in players.keys():
-			MessageBus.send("player_spawn", {
-				"player_id": existing_player_id,
-				"position": players[existing_player_id].global_position
-			}, peer_id)
+			spawn_player_rpc.rpc_id(peer_id, existing_player_id, players[existing_player_id].global_position)
 
 func _on_peer_disconnected(peer_id: int):
 	print("Player disconnected: ", peer_id)
@@ -70,7 +60,11 @@ func spawn_player_for_peer(peer_id: int):
 	player.name = "Player_" + str(peer_id)
 	player.set_multiplayer_authority(peer_id)
 	
-	# Use better spawn positions
+	# Add to scene tree FIRST
+	get_tree().current_scene.add_child(player, true)
+	players[peer_id] = player
+	
+	# THEN set position (after it's in the tree)
 	var spawn_positions = [
 		Vector3(0, 2, 0),      # Center, 2 units above ground
 		Vector3(5, 2, 0),      # East of center
@@ -84,132 +78,57 @@ func spawn_player_for_peer(peer_id: int):
 	var spawn_index = len(players) % len(spawn_positions)
 	player.global_position = spawn_positions[spawn_index]
 	
-	get_tree().current_scene.add_child(player, true)
-	players[peer_id] = player
-	
-	# Broadcast spawn to all clients
+	# Broadcast spawn to all clients via RPC
 	if is_server():
-		MessageBus.send("player_spawn", {
-			"player_id": peer_id,
-			"position": player.global_position
-		})
+		spawn_player_rpc.rpc(peer_id, player.global_position)
+
+@rpc("authority", "call_remote", "reliable")
+func spawn_player_rpc(peer_id: int, position: Vector3):
+	"""RPC to spawn a player on clients only."""
+	spawn_player_for_peer(peer_id)
+	if players.has(peer_id):
+		players[peer_id].global_position = position
 
 func despawn_player(peer_id: int):
 	if players.has(peer_id):
 		players[peer_id].queue_free()
 		players.erase(peer_id)
 		
-		# Broadcast despawn
+		# Broadcast despawn via RPC
 		if is_server():
-			MessageBus.send("player_despawn", {"player_id": peer_id})
+			despawn_player_rpc.rpc(peer_id)
 
-func _on_message_received(type: String, from_peer: int, payload: Dictionary):
-	match type:
-		"player_input":
-			if is_server():
-				process_player_input(from_peer, payload)
-		"player_state":
-			update_player_state(payload)
-		"player_spawn":
-			if not is_server():  # Clients receive spawn commands
-				spawn_player_for_peer(payload.player_id)
-				if players.has(payload.player_id):
-					players[payload.player_id].global_position = payload.position
-		"player_despawn":
-			if not is_server():  # Clients receive despawn commands
-				despawn_player(payload.player_id)
-
-func process_player_input(peer_id: int, input: Dictionary):
-	# Server processes input and broadcasts result
-	if players.has(peer_id):
-		var player = players[peer_id]
-		# Apply movement logic here
-		
-		# Broadcast updated state
-		MessageBus.send("player_state", {
-			"player_id": peer_id,
-			"position": player.global_position,
-			"velocity": player.velocity if player.has_method("get_velocity") else Vector3.ZERO
-		})
-
-func update_player_state(payload: Dictionary):
-	# Clients receive authoritative state updates
-	if players.has(payload.player_id):
-		var player = players[payload.player_id]
-		player.global_position = payload.position
-		# Apply other state updates
+@rpc("authority", "call_local", "reliable")
+func despawn_player_rpc(peer_id: int):
+	"""RPC to despawn a player on all clients."""
+	if not is_server():  # Only clients process this
+		despawn_player(peer_id)
 
 func is_server() -> bool:
-	return get_tree().get_multiplayer().is_server()
+	return multiplayer.is_server()
 
-# Add this to GameManager.gd after line 136
+func _on_connection_failed(reason: String):
+	"""Handle connection failure - return to lobby."""
+	print("GameManager: Connection failed, returning to lobby")
+	get_tree().change_scene_to_file("res://addons/gnet/examples/SimpleP2P/simple_p2p.tscn")
 
-func _on_gnet_error(code: String, details: String):
-	"""Handle gNet networking errors."""
-	print("gNet Error [", code, "]: ", details)
+func _input(event):
+	# Press Escape to return to lobby
+	if event.is_action_pressed("ui_cancel"):
+		_return_to_lobby()
+
+func _return_to_lobby():
+	"""Return to the SimpleP2P lobby while maintaining connection."""
+	print("GameManager: Returning to lobby")
 	
-	match code:
-		"STEAM_MISSING":
-			handle_steam_unavailable(details)
-		"STEAM_NOT_READY":
-			handle_steam_not_ready(details)
-		"STEAM_INIT_FAILED":
-			handle_steam_init_failed(details)
-		"HOST":
-			handle_host_error(details)
-		"CONNECT":
-			handle_connect_error(details)
-		"ADAPTER":
-			handle_adapter_error(details)
-		"PORT":
-			handle_port_error(details)
-		_:
-			handle_generic_error(code, details)
+	# Notify other players that this player is returning to lobby
+	if multiplayer.has_multiplayer_peer():
+		player_returned_to_lobby.rpc(multiplayer.get_unique_id())
+	
+	get_tree().change_scene_to_file("res://addons/gnet/examples/SimpleP2P/simple_p2p.tscn")
 
-func handle_steam_unavailable(details: String):
-	"""Steam/GodotSteam not available - fallback to ENet."""
-	print("Steam unavailable, attempting ENet fallback...")
-	# Could automatically switch to ENet
-	NetCore.use_adapter("enet")
-
-func handle_steam_not_ready(details: String):
-	"""Steam API not ready yet."""
-	print("Steam not ready: ", details)
-	# Could show a "waiting for Steam" message
-	# Or retry after a delay
-
-func handle_steam_init_failed(details: String):
-	"""Steam initialization failed."""
-	print("Steam init failed: ", details)
-	# Fallback to ENet or show error to user
-
-func handle_host_error(details: String):
-	"""Failed to create host/server."""
-	print("Host creation failed: ", details)
-	# Reset UI state, show error message
-
-func handle_connect_error(details: String):
-	"""Failed to connect to host."""
-	print("Connection failed: ", details)
-	# Reset UI state, show error message
-
-func handle_adapter_error(details: String):
-	"""Adapter-related error."""
-	print("Adapter error: ", details)
-	# Could try switching adapters
-
-func handle_port_error(details: String):
-	"""Port-related error (usually ENet)."""
-	print("Port error: ", details)
-	# Could try a different port
-
-func handle_generic_error(code: String, details: String):
-	"""Fallback for unknown error codes."""
-	print("Unknown gNet error [", code, "]: ", details)
-	# Log for debugging, show generic error message
-
-func _on_session_ended(ctx: Dictionary):
-	"""Handle when the multiplayer session ends (disconnection, etc.)"""
-	print("GameManager: Session ended, returning to main menu")
-	# Could return to lobby selector or main menu
-	get_tree().change_scene_to_file("res://addons/gnet/examples/CapsuleRoom/Main.tscn")
+@rpc("any_peer", "call_local", "reliable")
+func player_returned_to_lobby(peer_id: int):
+	"""Notify all players that someone returned to the lobby."""
+	print("Player ", peer_id, " returned to lobby")
+	# The actual despawning will be handled by the lobby scene when it loads

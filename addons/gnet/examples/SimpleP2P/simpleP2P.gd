@@ -23,6 +23,7 @@ Simple P2P example with separate Steam and ENet tabs.
 @onready var chat_log = $VBox/HBoxContainer/ChatContainer/Chat/ChatLog
 @onready var chat_input = $VBox/HBoxContainer/ChatContainer/Chat/ChatInput
 @onready var tab_container = $TabContainer
+@onready var launch_button = $VBoxContainer3/LaunchButton
 
 # PlayerList
 @onready var player_list = $VBoxContainer/PlayerListContainer/PlayerList
@@ -59,6 +60,9 @@ func _ready():
 	# Connect chat
 	chat_input.text_submitted.connect(_on_chat_submitted)
 	chat_input.placeholder_text = "Type message..."
+
+	launch_button.pressed.connect(_on_launch_game_pressed)
+	launch_button.disabled = true
 	
 	# Setup chat log
 	if chat_log is RichTextLabel:
@@ -175,6 +179,14 @@ func _on_connection_succeeded():
 	
 	_update_status("Connected!" + lobby_info)
 	_add_chat_message("[color=green]Connected to game![/color]")
+	
+	# Only enable launch button for the host
+	if multiplayer.is_server():
+		launch_button.disabled = false
+		launch_button.text = "Launch Game (Host)"
+	else:
+		launch_button.disabled = true
+		launch_button.text = "Waiting for Host..."
 
 func _on_connection_failed(reason: String):
 	match reason:
@@ -187,6 +199,10 @@ func _on_connection_failed(reason: String):
 		_:
 			_update_status("Failed: " + reason)
 	_enable_all_buttons()
+	
+	# Reset launch button
+	launch_button.disabled = true
+	launch_button.text = "Launch Game"
 
 func _on_peer_connected(peer_id: int):
 	_add_chat_message("[color=cyan]Player " + str(peer_id) + " joined[/color]")
@@ -229,12 +245,16 @@ func _on_steam_disconnect_pressed():
 	steam_status_label.text = "Disconnected"
 	_enable_all_buttons()
 	_add_chat_message("[color=red]Disconnected from game[/color]")
+	launch_button.disabled = true
+	launch_button.text = "Launch Game"
 
 func _on_enet_disconnect_pressed():
 	GNet.disconnect_game()
 	enet_status_label.text = "Disconnected"
 	_enable_all_buttons()
 	_add_chat_message("[color=red]Disconnected from game[/color]")
+	launch_button.disabled = true
+	launch_button.text = "Launch Game"
 
 func _on_players_changed(players: Array[int]):
 	"""Update UI when player list changes from GNet."""
@@ -257,3 +277,26 @@ func _on_friends_lobbies_found(lobbies: Array[Dictionary]):
 
 func _on_lobby_join_requested(lobby_id: int):
 	GNet.join_game(lobby_id)
+
+func _on_launch_game_pressed():
+	"""Host launches the game for all connected players."""
+	if not multiplayer.has_multiplayer_peer():
+		_add_chat_message("[color=red]Error: No active connection![/color]")
+		return
+	
+	if not multiplayer.is_server():
+		_add_chat_message("[color=red]Error: Only the host can launch the game![/color]")
+		return
+	
+	_add_chat_message("[color=yellow]Host is launching game for everyone...[/color]")
+	
+	# Launch game for all clients via RPC
+	launch_game_for_all.rpc()
+
+@rpc("authority", "call_local", "reliable")
+func launch_game_for_all():
+	"""RPC called by host to launch the game on all clients."""
+	_add_chat_message("[color=green]Game launching![/color]")
+	
+	# Change to the game scene while preserving the multiplayer connection
+	get_tree().change_scene_to_file("res://addons/gnet/examples/CapsuleRoom/Game.tscn")

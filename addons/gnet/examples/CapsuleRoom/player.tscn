@@ -19,3 +19,7 @@ mesh = SubResource("CapsuleMesh_bmqye")
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.04961, 0.838883, 2.21315)
 script = ExtResource("2_nwjqu")
+
+[node name="Nameplate" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.771076, 0)
+billboard = 1

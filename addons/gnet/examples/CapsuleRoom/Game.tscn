@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://djk2jwxr4s034"]
+[gd_scene load_steps=5 format=3 uid="uid://djk2jwxr4s034"]
 
 [ext_resource type="PackedScene" uid="uid://bu8nwme5i8uwy" path="res://addons/gnet/examples/CapsuleRoom/GameManager.tscn" id="1_mdu6v"]
 
@@ -8,10 +8,18 @@ size = Vector2(30, 30)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mdu6v"]
 albedo_color = Color(0.145098, 1, 1, 1)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_mdu6v"]
+size = Vector3(30, 0.1, 30)
+
 [node name="Game" type="Node3D"]
 
 [node name="Plane" type="MeshInstance3D" parent="."]
 mesh = SubResource("PlaneMesh_qe66t")
 surface_material_override/0 = SubResource("StandardMaterial3D_mdu6v")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Plane"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Plane/StaticBody3D"]
+shape = SubResource("BoxShape3D_mdu6v")
 
 [node name="GameManager" parent="." instance=ExtResource("1_mdu6v")]

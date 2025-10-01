@@ -27,8 +27,8 @@ layout_mode = 2
 
 [node name="JoinButton" type="Button" parent="."]
 layout_mode = 2
-offset_left = 198.0
+offset_left = 138.0
 offset_top = 4.0
-offset_right = 301.0
+offset_right = 241.0
 offset_bottom = 44.0
 text = "Join"
