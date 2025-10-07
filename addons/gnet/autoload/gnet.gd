@@ -263,7 +263,6 @@ func _on_steam_lobby_created(_result: int, _lobby_id: int):
 ### ------------------------------------------------------------------------ ###
 
 func connect_socket(steam_id: int):
-	print("connect_socket")
 	multiplayer_peer = SteamMultiplayerPeer.new()
 	multiplayer_peer.create_client(steam_id, 0)
 	multiplayer.set_multiplayer_peer(multiplayer_peer)
